@@ -1,0 +1,27 @@
+## Problem A: Stochastic simulation by the probability integral transform and bivariate techniques
+
+
+### 1. Sampling from the exponential distribution
+
+We want to generate $n$ samples the exponential distribution with rate parameter $\lambda$.
+
+```{r}
+rexp <- function(n, rate = 1) {
+  return(1)
+}
+```
+
+
+### 2. Probability density function
+
+(Answer)
+
+
+### 3. Box-Muller algorithm for standard normal distribution
+
+(Answer)
+
+
+### 4. Arbitrary normal distribution
+
+(Answer)

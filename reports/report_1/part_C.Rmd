@@ -1,0 +1,11 @@
+## Problem C: The Dirichlet distribution: simulating using known relations
+
+
+### 1. Theory
+
+(Answer)
+
+
+### 2. Implementation
+
+(Answer)

@@ -1,0 +1,21 @@
+## Problem D: Rejection sampling and importance sampling
+
+
+### 1. Rejection sampling algorithm
+
+(Answer)
+
+
+### 2. Posterior mean by Monte-Carlo integration
+
+(Answer)
+
+
+### 3. Required iterations for one sample
+
+(Answer)
+
+
+### 4. New prior
+
+(Answer)

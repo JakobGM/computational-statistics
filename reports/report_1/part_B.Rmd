@@ -1,0 +1,16 @@
+## Problem B: The gamma distribution
+
+
+### 1. Rejection sampling
+
+(Answer)
+
+
+### 2. Ratio of uniforms method
+
+(Answer)
+
+
+### 3. Arbitrary gamma function
+
+(Answer)

@@ -1,0 +1,22 @@
+---
+title: "Exercise 1"
+author: "Øyvind Klåpbakken, Jakob Gerhard Martinussen, Zhengyu Shan"
+date: "January 18, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r child = 'part_A.Rmd'}
+```
+
+```{r child = 'part_B.Rmd'}
+```
+
+```{r child = 'part_C.Rmd'}
+```
+
+```{r child = 'part_D.Rmd'}
+```
