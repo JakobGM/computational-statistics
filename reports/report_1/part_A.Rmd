@@ -6,9 +6,35 @@
 We want to generate $n$ samples the exponential distribution with rate parameter $\lambda$.
 
 ```{r}
+library(tidyverse)
+```
+
+```{r}
 rexp <- function(n, rate = 1) {
-  return(1)
+  uniformly_distributed <- runif(n=n)
+  exponentially_distributed <- -log(uniformly_distributed) / rate
+  return(enframe(exponentially_distributed))
 }
+```
+
+```{r}
+samples <- 10000
+rate <- 1
+exponential_samples <- rexp(n = samples, rate = rate)
+ggplot() + 
+  geom_histogram(
+    data = exponential_samples,
+    mapping = aes(x=value, y=..density..),
+    binwidth = 0.1
+  ) +
+  geom_vline(
+    aes(xintercept = mean(exponential_samples$value))
+  ) +
+  stat_function(
+    fun = dexp,
+    args=list(rate = rate),
+    aes(col='Theoretical density')
+  )
 ```
 
 
