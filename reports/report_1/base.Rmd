@@ -17,12 +17,12 @@ opts_chunk$set(tidy.opts = list(width.cutoff = 68), tidy = TRUE, warning = FALSE
 
 ```{r child = 'part_A.Rmd'}
 ```
-
+\newpage
 ```{r child = 'part_B.Rmd'}
 ```
-
+\newpage
 ```{r child = 'part_C.Rmd'}
 ```
-
+\newpage
 ```{r child = 'part_D.Rmd'}
 ```
