@@ -39,6 +39,11 @@ Source: CRAN
 Version: 0.12
 Hash: c32505adba4f6eca5aa20dd32300b019
 
+Package: formatR
+Source: CRAN
+Version: 1.5
+Hash: 258cf79a8dbeedf1c981cdb53837d2af
+
 Package: glue
 Source: CRAN
 Version: 1.3.0
