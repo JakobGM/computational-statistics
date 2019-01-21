@@ -56,8 +56,31 @@ $$
 1
 = \int_\mathbb{R} g(x) \text{d}x
 = \int_0^1 cx^{\alpha - 1} \text{d}x + \int_1^\infty ce^{-x} \text{d}x
-= c \frac{\alpha + e}{e\alpha} \\
-\implies c = \frac{e\alpha}{\alpha + e}
+= c \frac{\alpha + e}{\alpha e} \\
+\implies c = \frac{\alpha e}{\alpha + e}
+$$
+Inserting $c$ into the density function yields
+
+$$
+\newcommand{c}[]{\frac{\alpha e}{\alpha + e}}
+g(x) =
+\begin{cases}
+  \c x^{\alpha - 1}, & 0 < x < 1, \\
+  \c e^{-x}, & 1 \leq x, \\
+  0, & \text{otherwise.}
+\end{cases}
+$$
+
+And the cummulative distribution function becomes
+
+$$
+G(x)
+= \int_0^x g(y) \text{d}y
+= \begin{cases}
+  0, & x \leq 0 \\
+  \frac{e}{\alpha + e} x^{\alpha}, & 0 < x < 1, \\
+  1 - \c e^{-x}, & 1 \leq x.
+\end{cases}
 $$
 
 
