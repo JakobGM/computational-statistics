@@ -40,7 +40,25 @@ ggplot() +
 
 ### 2. Probability density function
 
-(Answer)
+We now consider the probability density function
+$$
+g(x) =
+\begin{cases}
+  cx^{\alpha - 1}, & 0 < x < 1, \\
+  ce^{-x}, & 1 \leq x, \\
+  0, & \text{otherwise,}
+\end{cases}
+$$
+where $c$ is the normalising constant and $\alpha \in (0, 1)$.
+First we determine the normalising constant by integration,
+
+$$
+1
+= \int_\mathbb{R} g(x) \text{d}x
+= \int_0^1 cx^{\alpha - 1} \text{d}x + \int_1^\infty ce^{-x} \text{d}x
+= c \frac{\alpha + e}{e\alpha} \\
+\implies c = \frac{e\alpha}{\alpha + e}
+$$
 
 
 ### 3. Box-Muller algorithm for standard normal distribution
