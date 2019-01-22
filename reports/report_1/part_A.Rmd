@@ -25,7 +25,8 @@ ggplot() +
   geom_histogram(
     data = exponential_samples,
     mapping = aes(x=value, y=..density..),
-    binwidth = 0.1
+    binwidth = 0.1,
+    boundary = 0
   ) +
   geom_vline(
     aes(xintercept = mean(exponential_samples$value))
@@ -111,6 +112,62 @@ G^{-1}(x) =
 $$
 
 #### (b) Sampling from $g(x)$
+
+We now want to generate random samples from $g(x)$. Since we know the inverse of the cumulative distribution, we can use the inverse transform technique.
+
+```{r}
+rg <- function(n, rate = 1) {
+  u <- runif(n = n)
+  boundary <- exp(1) / (rate + exp(1))
+  left <- u < boundary
+  right <- !left
+  u[left] <- (u[left] / boundary) ** (1 / rate)
+  u[right] <- -log((1 - u[right]) / (boundary * rate))
+  return(enframe(u))
+}
+```
+
+We also implement the density function for the purpose of comparison
+
+```{r}
+dg <- function(x, rate = 1) {
+  normalizing_constant <- rate * exp(1) / (rate + exp(1))
+  d <- rep(0, length(x))
+  left_indices <- 0 < x & x < 1
+  right_indices <- 1 <= x
+  d[left_indices] <- normalizing_constant * (x[left_indices] ** (rate - 1))
+  d[right_indices] <- normalizing_constant * exp(-x[right_indices])
+  return(d)
+}
+```
+
+We now compare 10.000 random samples generated with this sampling technique and compare
+it with the theoretical density
+
+```{r}
+samples <- 10000
+rate <- 0.7
+g_samples <- rg(n = samples, rate = rate)
+ggplot() +
+  geom_histogram(
+    data = g_samples,
+    mapping = aes(x=value, y=..density..),
+    binwidth = 0.1,
+    boundary = 0
+  ) + stat_function(
+    fun = dg,
+    args = list(rate = rate),
+    aes(col = 'Theoretical density.')
+  ) +
+  geom_vline(
+    aes(
+      xintercept = mean(g_samples$value),
+      col = 'Empirical mean'
+    )
+  ) +
+  ylim(0, 1) +
+  xlim(0, 5)
+```
 
 ### 3. Box-Muller algorithm for standard normal distribution
 
