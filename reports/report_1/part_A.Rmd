@@ -71,7 +71,9 @@ g(x) =
 \end{cases}
 $$
 
-And the cummulative distribution function becomes
+#### (a) Cumulative distribution
+
+The cummulative distribution can now be found
 
 $$
 G(x)
@@ -82,7 +84,33 @@ G(x)
   1 - \c e^{-x}, & 1 \leq x.
 \end{cases}
 $$
+Now we find the inverse of the cumulative distribution function. First for the case when $G(x) < \frac{e}{\alpha + e}$
 
+$$
+\begin{align}
+  G(x) &= \frac{e}{\alpha + e} x^{\alpha} \\
+  \implies x &= \sqrt[\alpha]{\frac{\alpha + e}{e} G(x)}
+\end{align}
+$$
+And for $G(x) > \frac{e}{\alpha + e}$ we have
+
+$$
+\begin{align}
+  G(x) &= 1 - \frac{\alpha e}{\alpha + e}e^{-x} \\
+  \implies x &= - \ln\left(\frac{\alpha + e}{\alpha e}(1 - G(x))\right)
+\end{align}
+$$
+The inverse cumulative function thus becomes
+
+$$
+G^{-1}(x) =
+\begin{cases}
+  \sqrt[\alpha]{\frac{\alpha + e}{e} x}, &0 \leq x < \frac{e}{\alpha + e}, \\
+  - \ln\left(\frac{\alpha + e}{\alpha e}(1 - x)\right), &\frac{e}{\alpha + e} \leq x \leq 1.
+\end{cases}
+$$
+
+#### (b) Sampling from $g(x)$
 
 ### 3. Box-Muller algorithm for standard normal distribution
 
