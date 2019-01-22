@@ -141,18 +141,18 @@ dg <- function(x, rate = 1) {
 }
 ```
 
-We now compare 10.000 random samples generated with this sampling technique and compare
+We now compare one million random samples generated with this sampling technique and compare
 it with the theoretical density
 
 ```{r}
-samples <- 10000
+samples <- 1000000
 rate <- 0.7
 g_samples <- rg(n = samples, rate = rate)
 ggplot() +
   geom_histogram(
     data = g_samples,
     mapping = aes(x=value, y=..density..),
-    binwidth = 0.1,
+    binwidth = 0.01,
     boundary = 0
   ) + stat_function(
     fun = dg,
