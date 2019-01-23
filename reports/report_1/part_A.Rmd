@@ -7,6 +7,7 @@ We want to generate $n$ samples the exponential distribution with rate parameter
 
 ```{r}
 library(tidyverse)
+library(magrittr)
 ```
 
 ```{r}
@@ -171,9 +172,77 @@ ggplot() +
 
 ### 3. Box-Muller algorithm for standard normal distribution
 
-(Answer)
+```{r}
+
+box_muller <- function(n){
+  x1 <- runif((n+1)/2)*2*pi
+  x2 <- rexp((n+1)/2, rate=1/2) %>% use_series(value)
+  y1 <- map2_dbl(x2, x1, ~sqrt(.x)*cos(.y))
+  y2 <- map2_dbl(x2, x1, ~sqrt(.x)*sin(.y))
+  return(c(y1, y2)[1:n])
+}
+
+std_normal_dist <- as_mapper(~1/sqrt(2*pi)*exp(-.x^2/2))
+n <- 1000000
+x <- box_muller(n)
+
+sample <- tibble(value = x)
+results <- list(mean = 0,
+                sample_mean = mean(x), 
+                variance = 1,
+                sample_variance = var(x))
+
+test_plot <- sample %>%
+  ggplot() + 
+  geom_histogram(aes(x=value, y=..density..), binwidth=0.05) + 
+  stat_function(fun=std_normal_dist, color="red", size=1)
+
+print(test_plot)
+print(results)
+```
+
 
 
 ### 4. Arbitrary normal distribution
 
-(Answer)
+```{r}
+multivariate_normal <- function(mean, covariance, n){
+  d <- length(mean)
+  A <- chol(covariance)
+  
+  xs <- rerun(n, box_muller(d))
+  y <- map(xs, ~A%*%.x + mean)
+  
+  return(y)
+}
+```
+
+The implementation is tested with $d=3$, $\mu = \left[1, 4, 2\right]^T$ and $\Sigma = 3\mathbb{I}_3$. The empirical mean and covariance matrix is shown to agree with the specified theoretical mean and covariance matrix. 
+
+
+```{r}
+mean <- c(1,4,2)
+covariance <- diag(3)*3
+n <- 10000
+
+sample <- multivariate_normal(mean, covariance, n)
+
+sample_mean <- sample %>%
+  map(t) %>%
+  map(as_tibble) %>%
+  bind_rows() %>%
+  colMeans()
+
+sample_covariance <- sample %>%
+  map(t) %>%
+  map(as_tibble) %>%
+  bind_rows() %>%
+  cov()
+
+results <- list(mean=mean,
+                sample_mean=as.matrix(sample_mean),
+                covariance=covariance,
+                sample_covariance=as.matrix(sample_covariance))
+print(results)
+```
+
