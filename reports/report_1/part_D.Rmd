@@ -1,10 +1,113 @@
 ## Problem D: Rejection sampling and importance sampling
 
+We now consider a specific recombination rate in genetics given by the data of Rao, C. R. [-@Roa].
+197 counts are classified into four categories, $\vec{y} = (y_1, y_2, y_3, y_4)$.
+These are assumed to be multinomially distributed, and the data is given in Table 1.
+
+```{r, echo=FALSE}
+library(ggplot2)
+library(tibble)
+library(knitr)
+library(kableExtra)
+data <- tibble(
+  cellCount = c("$y_1 = 125$", "$y_2 = 18$", "$y_3 = 20$", "$y_4 = 34$"),
+  probability = c("$\\frac{1}{2} + \\frac{\\theta}{4}$", "$\\frac{1 - \\theta}{4}$", "$\\frac{1 - \\theta}{4}$", "$\\frac{\\theta}{4}$")
+)
+kable(
+  data,
+  col.names = c("Cell count", "Probability"),
+  caption = "Table 1: Genetic linkage data"
+)
+```
+
+The multinomial mass function is given (proportionally) by
+
+$$
+f(\vec{y} | \theta) \propto (2 + \theta)^{y_1} (1-\theta)^{y_2 + y_3} \theta^{y_4}
+$$
+
+Using Beta(1, 1) as a prior for $\theta$, i.e. a uniform prior, yields the following posterior density
+
+$$
+\begin{align}
+  f(\theta | \vec{y}) =& d \cdot h(\theta | \vec{y})& \\
+  h(\theta) :=& (2 + \theta)^{y_1} (1-\theta)^{y_2 + y_3} \theta^{y_4}& \\
+  d :=& \int_0^1 h(\theta | \vec{y}) \text{d}\theta > 0
+\end{align}
+$$
+
+Here we have introduced the unknown normalizing constant $d$ for $h(\theta | \vec{y})$.
 
 ### 1. Rejection sampling algorithm
 
-(Answer)
+We will now implement the reqection sampling algorithm for $f(\theta|\vec{y})$ with $g(\theta | \vec{y}) = 1 \sim \mathcal{U}(0, 1)$ as the proposal density.
+The acceptance probability thus becomes
 
+$$
+\alpha = \frac{1}{c} \cdot \frac{f(\theta)}{g(\theta)} = \frac{d}{c} \cdot h(\theta | \vec{y}) \in [0, 1].
+$$
+Notice that neither $c$ nor $d$ are known to us, but we can approximate their proportion as
+
+$$
+\frac{1}{\beta} := \frac{c}{d} = \max_{\theta} h(\theta | \vec{y})
+$$
+
+Such that the acceptance probability can be written as
+$$
+\alpha = \beta \cdot h(\theta | \vec{y})
+$$
+
+```{r}
+construct_f <- function(y) {
+  unscaled_log_f <- function(theta) {
+    y[1] * log(2 + theta) + (y[2] + y[3]) * log(1 - theta) + y[4] * log(theta)
+  }
+  log_maxima <- optimize(
+    f = unscaled_log_f,
+    maximum = TRUE,
+    interval = c(0, 1)
+  )$objective
+  print(log_maxima)
+  
+  scaled_f <- function(theta) {
+    return(exp(unscaled_log_f(theta) - log_maxima))
+  }
+  # return(unscaled_log_f)
+  return(scaled_f)
+}
+
+sample_theta <- function(n, y) {
+  f_density <- construct_f(y = y)
+  found <- vector()
+  while(length(found) < n) {
+    x <- runif(1)
+    u <- runif(1)
+    alpha <- f_density(x)
+    if (u <= alpha) {
+      found <- c(found, x)
+    }
+  }
+  return(found)
+}
+```
+
+```{r}
+y <- c(125, 18, 20, 34)
+f_density <- construct_f(y = y)
+df <- enframe(rnorm(10000))
+ggplot(data = df) + aes(x = value) +
+  stat_function(
+    fun = f_density,
+    xlim = c(0, 1),
+    mapping = aes(col = 'Density'),
+    geom = "area",
+    fill = "gray"
+  ) +
+  geom_hline (
+    yintercept = 1,
+    mapping = aes(col = 'Uniform distribution')
+  )
+```
 
 ### 2. Posterior mean by Monte-Carlo integration
 
