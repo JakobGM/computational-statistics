@@ -80,7 +80,13 @@ print(paste("Acceptance probability:", 1/c))
 
 ### 2. Ratio of uniforms method
 
-(Answer)
+## (a)
+
+The values of $a$ and $b_{+}$ are found by taking the derivative of the expressions and setting them equal to zero.
+The values are $a = \alpha - 1$ and $b_{+} = \alpha + 1$. The function $f^{\star}(x)$ is zero for $x \leq 0$, so it's supremum is 0 in this region, giving us $b_{-} = 0$.
+
+
+
 
 
 ### 3. Arbitrary gamma function
