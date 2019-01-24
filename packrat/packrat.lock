@@ -218,6 +218,13 @@ Source: CRAN
 Version: 1.6
 Hash: 5f969e213e966135393e3e304abf3f49
 
+Package: kableExtra
+Source: CRAN
+Version: 1.0.1
+Hash: 18757a3cff18afe7d93853fd3993bd0e
+Requires: digest, glue, htmltools, knitr, magrittr, readr, rmarkdown,
+    rstudioapi, rvest, scales, stringr, viridisLite, webshot, xml2
+
 Package: knitr
 Source: CRAN
 Version: 1.21
@@ -459,6 +466,12 @@ Package: viridisLite
 Source: CRAN
 Version: 0.3.0
 Hash: 78bb072c4f9e729a283d4c40ec93f9c6
+
+Package: webshot
+Source: CRAN
+Version: 0.5.1
+Hash: c95b36acba37ea1d6cd6e1c6fe2c2ecc
+Requires: callr, jsonlite, magrittr
 
 Package: whisker
 Source: CRAN
