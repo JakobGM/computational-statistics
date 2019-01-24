@@ -43,3 +43,4 @@ packrat/src/
 # RMarkdown output pdfs
 **/*.pdf
 **/*.html
+**/*_files
