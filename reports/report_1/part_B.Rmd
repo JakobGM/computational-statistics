@@ -3,7 +3,79 @@
 
 ### 1. Rejection sampling
 
-(Answer)
+## (a) Acceptance probability
+
+The acceptance probability is the inverse of the constant $c$ used in the rejection-sampling algorithm. The constant $c$ is chosen to be the smallest value that satisfies $c \leq \frac{f(x)}{g(x)}$. 
+
+With $f(x) = \frac{1}{\Gamma(\alpha)}x^{\alpha -1}e^{-x}$ and $g(x)$ as specified in A.2, we must choose $c$ such that
+
+$$
+c \geq \frac{f(x)}{g(x)} = \begin{cases}\frac{1}{\Gamma(\alpha)}\frac{\alpha + e}{e\alpha}\frac{1}{e^x},\quad 0 < x < 1 \\ 
+\frac{1}{\Gamma(\alpha)}\frac{\alpha + e}{e\alpha}x^{\alpha - 1},\quad x \geq 1\end{cases}
+$$
+This functions attains it's maximum at $x=1$, and $\frac{f(x)}{g(x)}\mid_{x=1} = \frac{1}{\Gamma(\alpha)}\frac{\alpha + e}{e\alpha}$ and choosing $c \frac{f(x)}{g(x)}\mid_{x=1}$ satisfies the criterion above. This leads to the acceptance probability $\Gamma(\alpha)\frac{e\alpha}{e + \alpha}$.
+
+## (b) Rejection-sampling implementation
+
+
+```{r}
+library(tidyverse)
+library(magrittr)
+
+dg <- function(x, rate = 1) {
+  normalizing_constant <- rate * exp(1) / (rate + exp(1))
+  d <- rep(0, length(x))
+  left_indices <- 0 < x & x < 1
+  right_indices <- 1 <= x
+  d[left_indices] <- normalizing_constant * (x[left_indices] ** (rate - 1))
+  d[right_indices] <- normalizing_constant * exp(-x[right_indices])
+  return(d)
+}
+
+rg <- function(n, rate = 1) {
+  u <- runif(n = n)
+  boundary <- exp(1) / (rate + exp(1))
+  left <- u < boundary
+  right <- !left
+  u[left] <- (u[left] / boundary) ** (1 / rate)
+  u[right] <- -log((1 - u[right]) / (boundary * rate))
+  return(enframe(u))
+}
+
+n <- 100000
+rate <- 0.4
+
+rf <- function(n, rate){
+  dg_fixed <- partial(dg, rate=rate)
+  df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
+  
+  c <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
+  alpha_mapper <- as_mapper(~1/c*df(.x)/dg_fixed(.x))
+  
+  xs <- rg(n, rate=rate) %>% use_series(value)
+  alpha <- xs %>% map_dbl(alpha_mapper)
+  
+  accepted_xs <- xs %>% keep(runif(n) < alpha) %>% enframe
+}
+
+random_f <- rf(n, rate)
+
+df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
+dg_fixed <- partial(dg, rate=rate)
+c <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
+dg_scaled <- as_mapper(~dg_fixed(.x)*c)
+
+ggplot(random_f) +
+  geom_histogram(aes(x=value, y=..density..), binwidth=0.05, boundary=0) + 
+  stat_function(fun=df, color='red', size=1) + 
+  stat_function(fun=dg_scaled, color='green', size=1, linetype="dashed") + 
+  ylim(0, 1) +
+  xlim(0, NA)
+
+print(paste("Acceptance probability:", 1/c))
+
+```
+
 
 
 ### 2. Ratio of uniforms method
