@@ -19,29 +19,6 @@ This functions attains it's maximum at $x=1$, and $\frac{f(x)}{g(x)}\mid_{x=1} =
 
 
 ```{r}
-library(tidyverse)
-library(magrittr)
-
-dg <- function(x, rate = 1) {
-  normalizing_constant <- rate * exp(1) / (rate + exp(1))
-  d <- rep(0, length(x))
-  left_indices <- 0 < x & x < 1
-  right_indices <- 1 <= x
-  d[left_indices] <- normalizing_constant * (x[left_indices] ** (rate - 1))
-  d[right_indices] <- normalizing_constant * exp(-x[right_indices])
-  return(d)
-}
-
-rg <- function(n, rate = 1) {
-  u <- runif(n = n)
-  boundary <- exp(1) / (rate + exp(1))
-  left <- u < boundary
-  right <- !left
-  u[left] <- (u[left] / boundary) ** (1 / rate)
-  u[right] <- -log((1 - u[right]) / (boundary * rate))
-  return(enframe(u))
-}
-
 n <- 100000
 rate <- 0.4
 
@@ -82,8 +59,39 @@ print(paste("Acceptance probability:", 1/c))
 
 ## (a)
 
-The values of $a$ and $b_{+}$ are found by taking the derivative of the expressions and setting them equal to zero.
-The values are $a = \alpha - 1$ and $b_{+} = \alpha + 1$. The function $f^{\star}(x)$ is zero for $x \leq 0$, so it's supremum is 0 in this region, giving us $b_{-} = 0$.
+To find the values of $a$ and $b_{+}$ we take the of derivative of $f^{\star}(x)$ and $x^2f^{\star}(x)$and set it equal to zero. This gives us the values for which the two functions are maximized. By evaluating the functions at these points, $x = \sqrt{\alpha - 1}$ and $x = \sqrt{\alpha + 1}$ respectively, one obtains that
+$a = \sqrt{\left(\frac{\alpha - 1}{e}\right)^{\alpha - 1}}$ and $b_{+} = \sqrt{\left(\frac{\alpha + 1}{e}\right)^{\alpha + 1}}$. The function $f^{\star}(x)$ is zero for $x \leq 0$, so it's supremum is 0 in this region, giving us $b_{-} = 0$.
+
+```{r}
+rate <- 5
+a <- sqrt(((rate - 1)/exp(1))^(rate - 1))
+b_plus <- sqrt(((rate + 1)/exp(1))^(rate +1))
+b_minus <- 0
+
+n <- 10000
+x1 <- runif(n)*a
+x2 <- runif(n)*b_plus - b_minus
+
+random_samples <- tibble(x1, x2)
+
+random_samples <- random_samples %>%
+  mutate(upperBound = ((rate - 1)*log(x2/x1) - x2 + x1)/2) %>%
+  mutate(inRegion = x1 <= upperBound)
+
+random_samples %>%
+  ggplot() +
+  geom_point(aes(x=x1, y=x2, colour=inRegion)) +
+  coord_flip()
+
+accepted_samples <- random_samples %>% filter(inRegion == TRUE) %>% mutate(y = x2/x1)
+
+accepted_samples %>%
+  filter(y < quantile(y, probs = 0.95)) %>%
+  ggplot() +
+  geom_histogram(aes(x=y, y=..density..), binwidth=0.1) +
+  stat_function(aes(x=y), fun = dgamma, args = list(shape = rate, scale = 1))
+```
+
 
 
 
