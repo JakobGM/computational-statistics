@@ -76,7 +76,7 @@ random_samples <- tibble(x1, x2)
 
 random_samples <- random_samples %>%
   mutate(upperBound = ((rate - 1)*log(x2/x1) - x2 + x1)/2) %>%
-  mutate(inRegion = x1 <= upperBound)
+  mutate(inRegion = log(x1) <= upperBound)
 
 random_samples %>%
   ggplot() +
