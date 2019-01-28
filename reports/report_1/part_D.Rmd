@@ -81,11 +81,15 @@ construct_f <- function(y) {
 
 sample_theta <- function(n, y) {
   #' Generate n theta samples from f function, given 4-vector y
+  #' Returns a list with thetas key to $theta,
+  #' and the number of tries keyed to $tries.
   f_density <- construct_f(y = y)
   found <- vector()
+  tries <- 0
   while(length(found) < n) {
     # Number of samples that remain to be found
     remaining <- n - length(found)
+    tries <- tries + remaining
 
     # These are proposed values that might be accepted...
     x <- runif(remaining)
@@ -98,17 +102,17 @@ sample_theta <- function(n, y) {
     success <- u <= alpha
     found <- c(found, x[success])
   }
-  return(found)
+  return(list(theta = found, tries = tries))
 }
 ```
 
 ```{r}
 y <- c(125, 18, 20, 34)
-f_density <- construct_f(y = y)
-df <- enframe(rnorm(10000))
+f_scaled_density <- construct_f(y = y)
+df <- enframe(rnorm(1))
 ggplot(data = df) + aes(x = value) +
   stat_function(
-    fun = f_density,
+    fun = f_scaled_density,
     xlim = c(0, 1),
     mapping = aes(col = 'Density'),
     geom = "area",
@@ -123,13 +127,11 @@ ggplot(data = df) + aes(x = value) +
 
 ```{r, cache=TRUE}
 N <- 10000000
-theta_samples <- enframe(sample_theta(n = N, y = y))
+theta_sampling_result <- sample_theta(n = N, y = y)
+theta_samples <- enframe(theta_sampling_result$theta)
+theta_tries <- theta_sampling_result$tries
 ```
 ```{r}
-fNormalizer <- integrate(f_density, lower = 0, upper = 1)$value
-f_normalizedDensity <- function(theta) {
-  return(f_density(theta) / fNormalizer)
-}
 make_density <- function(f, lower = 0, upper = 1) {
   normalizer = integrate(f, lower = lower, upper = upper)$value
   normalized_function <- function(...) {
@@ -137,6 +139,7 @@ make_density <- function(f, lower = 0, upper = 1) {
   }
   return(normalized_function)
 }
+f_density <- make_density(f_scaled_density)
 ```
 
 ```{r}
@@ -169,7 +172,7 @@ theta_samples %>%
     )
   ) +
   stat_function(
-    fun = make_density(f_density),
+    fun = f_density,
     xlim = c(0, 1),
     aes(col = 'f')
   ) +
@@ -180,12 +183,22 @@ theta_samples %>%
 
 ### 2. Posterior mean by Monte-Carlo integration
 
-(Answer)
 
 
 ### 3. Required iterations for one sample
 
-(Answer)
+```{r}
+theta_tries / N
+```
+
+```{r}
+cInverse = optimize(
+  f = f_density,
+  interval = c(0, 1),
+  maximum = TRUE
+)$objective
+cInverse
+```
 
 
 ### 4. New prior
