@@ -25,17 +25,34 @@ rate <- 0.4
 rf <- function(n, rate){
   dg_fixed <- partial(dg, rate=rate)
   df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
-  
+
   c <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
   alpha_mapper <- as_mapper(~1/c*df(.x)/dg_fixed(.x))
-  
+
   xs <- rg(n, rate=rate) %>% use_series(value)
   alpha <- xs %>% map_dbl(alpha_mapper)
-  
+
   accepted_xs <- xs %>% keep(runif(n) < alpha) %>% enframe
 }
 
-random_f <- rf(n, rate)
+fixed_size_rf <- function(n, rate){
+  overall_acceptance_probability <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
+  expected_required_n <- n*overall_acceptance_probability
+  df <- rf(expected_required_n, rate)
+  while (TRUE){
+    if (nrow(df) < n){
+      df <- bind_rows(df, rf((n - nrow(df))*overall_acceptance_probability, rate))
+    }
+    else if (nrow(df > n)){
+      return(df[1:n,])
+    }
+    else{
+      return(df)
+    }
+  }
+}
+
+random_f <- fixed_size_rf(n, rate)
 
 df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
 dg_fixed <- partial(dg, rate=rate)
@@ -43,14 +60,13 @@ c <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
 dg_scaled <- as_mapper(~dg_fixed(.x)*c)
 
 ggplot(random_f) +
-  geom_histogram(aes(x=value, y=..density..), binwidth=0.05, boundary=0) + 
-  stat_function(fun=df, color='red', size=1) + 
-  stat_function(fun=dg_scaled, color='green', size=1, linetype="dashed") + 
+  geom_histogram(aes(x=value, y=..density..), binwidth=0.05, boundary=0) +
+  stat_function(fun=df, color='red', size=1) +
+  stat_function(fun=dg_scaled, color='green', size=1, linetype="dashed") +
   ylim(0, 1) +
   xlim(0, NA)
 
 print(paste("Acceptance probability:", 1/c))
-
 ```
 
 
