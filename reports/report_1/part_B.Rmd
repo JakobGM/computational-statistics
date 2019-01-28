@@ -22,7 +22,7 @@ This functions attains it's maximum at $x=1$, and $\frac{f(x)}{g(x)}\mid_{x=1} =
 n <- 100000
 rate <- 0.4
 
-rf <- function(n, rate){
+rs_rf <- function(n, rate){
   dg_fixed <- partial(dg, rate=rate)
   df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
 
@@ -35,13 +35,13 @@ rf <- function(n, rate){
   accepted_xs <- xs %>% keep(runif(n) < alpha) %>% enframe
 }
 
-fixed_size_rf <- function(n, rate){
+rs_fixed_size_rf <- function(n, rate){
   overall_acceptance_probability <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
   expected_required_n <- n*overall_acceptance_probability
-  df <- rf(expected_required_n, rate)
+  df <- rs_rf(expected_required_n, rate)
   while (TRUE){
     if (nrow(df) < n){
-      df <- bind_rows(df, rf((n - nrow(df))*overall_acceptance_probability, rate))
+      df <- bind_rows(df, rs_rf((n - nrow(df))*overall_acceptance_probability, rate))
     }
     else if (nrow(df > n)){
       return(df[1:n,])
@@ -52,7 +52,7 @@ fixed_size_rf <- function(n, rate){
   }
 }
 
-random_f <- fixed_size_rf(n, rate)
+random_f <- rs_fixed_size_rf(n, rate)
 
 df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
 dg_fixed <- partial(dg, rate=rate)
@@ -67,6 +67,7 @@ ggplot(random_f) +
   xlim(0, NA)
 
 print(paste("Acceptance probability:", 1/c))
+
 ```
 
 
@@ -79,33 +80,90 @@ To find the values of $a$ and $b_{+}$ we take the of derivative of $f^{\star}(x)
 $a = \sqrt{\left(\frac{\alpha - 1}{e}\right)^{\alpha - 1}}$ and $b_{+} = \sqrt{\left(\frac{\alpha + 1}{e}\right)^{\alpha + 1}}$. The function $f^{\star}(x)$ is zero for $x \leq 0$, so it's supremum is 0 in this region, giving us $b_{-} = 0$.
 
 ```{r}
-rate <- 5
-a <- sqrt(((rate - 1)/exp(1))^(rate - 1))
-b_plus <- sqrt(((rate + 1)/exp(1))^(rate +1))
-b_minus <- 0
+#B2:
 
-n <- 10000
-x1 <- runif(n)*a
-x2 <- runif(n)*b_plus - b_minus
+rate <- 100
+n <- 10000000
 
-random_samples <- tibble(x1, x2)
+high_exponents <- function(base, exponent){
+  remainder <- exponent - floor(exponent)
+  prime_factors <- primeFactors(floor(exponent))
+  result = base
+  for (factor in prime_factors){
+    result <- result^factor
+  }
+  result <- result*base^(remainder)
+  return(result)
+}
 
-random_samples <- random_samples %>%
-  mutate(upperBound = ((rate - 1)*log(x2/x1) - x2 + x1)/2) %>%
-  mutate(inRegion = log(x1) <= upperBound)
+rou_rf <- function(n, rate){
+  a <- high_exponents((rate - 1)/exp(1), (rate - 1)/2)
+  b_plus <- high_exponents((rate + 1)/exp(1), (rate + 1)/2)
 
-random_samples %>%
-  ggplot() +
-  geom_point(aes(x=x1, y=x2, colour=inRegion)) +
-  coord_flip()
+  x1 <- runif(n)*a
+  x2 <- runif(n)*b_plus
+  random_samples <- tibble(x1, x2)
 
-accepted_samples <- random_samples %>% filter(inRegion == TRUE) %>% mutate(y = x2/x1)
+  random_samples <- random_samples %>%
+    mutate(upperBound = ((rate - 1)*(log(x2) - log(x1)) - x2/x1)/2) %>%
+    mutate(inRegion = log(x1) <= upperBound)
+
+  accepted_samples <- random_samples %>%
+    filter(inRegion == TRUE) %>%
+    mutate(y = x2/x1)
+
+  return(accepted_samples)
+}
+
+rou_fixed_size_rf <- function(n, rate){
+  df <- rou_rf(n, rate)
+  estimated_acceptance_probability <- nrow(df)/n
+  while (TRUE){
+    if (nrow(df) < n){
+      df <- bind_rows(df, rou_rf((n - nrow(df))/estimated_acceptance_probability, rate))
+    }
+    else if (nrow(df > n)){
+      return(df[1:n,])
+    }
+    else{
+      return(df)
+    }
+  }
+}
+
+required_trials <- function(rate){
+  a <- high_exponents((rate - 1)/exp(1), (rate - 1)/2)
+  b_plus <- high_exponents((rate + 1)/exp(1), (rate + 1)/2)
+
+  total_attempts <- 0
+  accepted_samples <- 0
+
+  while (accepted_samples < 1000){
+    total_attempts <- total_attempts + 1
+    x1 <- runif(1)*a
+    x2 <- runif(1)*b_plus
+    if(log(x1) <= ((rate - 1)*(log(x2) - log(x1)) - x2/x1)/2){
+      accepted_samples = accepted_samples + 1
+    }
+  }
+  return(total_attempts)
+}
+
+trials_df <- tibble(rate=seq(3,300, 5), trials = seq(3,300, 5) %>% map_dbl(~required_trials(.x)))
+trials_df %>%
+  ggplot(aes(x=rate, y=trials)) +
+  geom_point() +
+  geom_smooth()
+
+accepted_samples <- rou_fixed_size_rf(n, rate)
 
 accepted_samples %>%
-  filter(y < quantile(y, probs = 0.95)) %>%
   ggplot() +
-  geom_histogram(aes(x=y, y=..density..), binwidth=0.1) +
+  geom_histogram(aes(x=y, y=..density..), binwidth=0.2) +
   stat_function(aes(x=y), fun = dgamma, args = list(shape = rate, scale = 1))
+
+gamma_mean <- rate
+print(c(gamma_mean, mean(accepted_samples$y)))
 ```
 
 
@@ -115,4 +173,18 @@ accepted_samples %>%
 
 ### 3. Arbitrary gamma function
 
-(Answer)
+```{r}
+random_sample_from_f <- function(n, rate){
+  if (rate < 1){
+    result <- rs_fixed_size_rf(n, rate)$value
+  }
+  else if (rate == 1){
+    result <- rexp(n, rate=rate)$value
+  }
+  else{
+    result <- rou_fixed_size_rf(n, rate)$y
+  }
+  return(result)
+}
+```
+

@@ -8,6 +8,7 @@ We want to generate $n$ samples the exponential distribution with rate parameter
 ```{r}
 library(tidyverse)
 library(magrittr)
+library(numbers)
 ```
 
 ```{r}
