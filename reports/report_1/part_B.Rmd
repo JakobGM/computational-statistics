@@ -43,7 +43,7 @@ rs_fixed_size_rf <- function(n, rate){
     if (nrow(df) < n){
       df <- bind_rows(df, rs_rf((n - nrow(df))*overall_acceptance_probability, rate))
     }
-    else if (nrow(df > n)){
+    else if (nrow(df) > n){
       return(df[1:n,])
     }
     else{
@@ -122,7 +122,7 @@ rou_fixed_size_rf <- function(n, rate){
     if (nrow(df) < n){
       df <- bind_rows(df, rou_rf((n - nrow(df))/estimated_acceptance_probability, rate))
     }
-    else if (nrow(df > n)){
+    else if (nrow(df) > n){
       return(df[1:n,])
     }
     else{
