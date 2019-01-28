@@ -13,11 +13,12 @@ data <- tibble(
   cellCount = c("$y_1 = 125$", "$y_2 = 18$", "$y_3 = 20$", "$y_4 = 34$"),
   probability = c("$\\frac{1}{2} + \\frac{\\theta}{4}$", "$\\frac{1 - \\theta}{4}$", "$\\frac{1 - \\theta}{4}$", "$\\frac{\\theta}{4}$")
 )
-kable(
-  data,
-  col.names = c("Cell count", "Probability"),
-  caption = "Table 1: Genetic linkage data"
-)
+data %>%
+  kable(
+    col.names = c("Cell count", "Probability"),
+    caption = "Table 1: Genetic linkage data"
+  ) %>%
+  kable_styling()
 ```
 
 The multinomial mass function is given (proportionally) by
@@ -40,7 +41,7 @@ Here we have introduced the unknown normalizing constant $d$ for $h(\theta | \ve
 
 ### 1. Rejection sampling algorithm
 
-We will now implement the reqection sampling algorithm for $f(\theta|\vec{y})$ with $g(\theta | \vec{y}) = 1 \sim \mathcal{U}(0, 1)$ as the proposal density.
+We will now implement the rejection sampling algorithm for $f(\theta|\vec{y})$ with $g(\theta | \vec{y}) = 1 \sim \mathcal{U}(0, 1)$ as the proposal density.
 The acceptance probability thus becomes
 
 $$
@@ -67,12 +68,13 @@ construct_f <- function(y) {
     maximum = TRUE,
     interval = c(0, 1)
   )$objective
-  print(log_maxima)
   
+  # Scale f to have max value 1
+  # NB! This does not integrate to 1, so it is not a proper density function!
+  # You can use make_density for that purpose.
   scaled_f <- function(theta) {
     return(exp(unscaled_log_f(theta) - log_maxima))
   }
-  # return(unscaled_log_f)
   return(scaled_f)
 }
 
@@ -81,8 +83,8 @@ sample_theta <- function(n, y) {
   found <- vector()
   while(length(found) < n) {
     x <- runif(1)
-    u <- runif(1)
     alpha <- f_density(x)
+    u <- runif(1)
     if (u <= alpha) {
       found <- c(found, x)
     }
@@ -108,6 +110,50 @@ ggplot(data = df) + aes(x = value) +
     mapping = aes(col = 'Uniform distribution')
   )
 ```
+
+
+```{r, cache=TRUE}
+N <- 100000
+theta_samples <- enframe(sample_theta(n = N, y = y))
+```
+```{r}
+fNormalizer <- integrate(f_density, lower = 0, upper = 1)$value
+f_normalizedDensity <- function(theta) {
+  return(f_density(theta) / fNormalizer)
+}
+make_density <- function(f, lower = 0, upper = 1) {
+  normalizer = integrate(f, lower = lower, upper = upper)$value
+  normalized_function <- function(...) {
+    return(f(...) / normalizer)
+  }
+  return(normalized_function)
+}
+```
+
+```{r}
+thetaMean <- mean(theta_samples$value)
+binWidth = 0.005
+theta_samples %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(x = value, y = ..density..),
+    binwidth = binWidth,
+    boundary = 0,
+    size = 0
+  ) +
+  geom_vline(
+    xintercept = thetaMean,
+    show.legend = TRUE,
+    aes(col = 'Sample mean')
+  ) +
+  stat_function(
+    fun = make_density(f_density),
+    xlim = c(0, 1),
+    aes(col = 'f')
+  ) +
+  xlim(0, 1)
+```
+
 
 ### 2. Posterior mean by Monte-Carlo integration
 
