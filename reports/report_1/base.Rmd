@@ -20,6 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Automatically apply code formatter for code blocks
 library(formatR)
 library(knitr)
+library(docstring)
 showsol <- FALSE
 opts_chunk$set(tidy.opts = list(width.cutoff = 68), tidy = FALSE, warning = FALSE, error = FALSE, message = FALSE, echo = TRUE)
 ```

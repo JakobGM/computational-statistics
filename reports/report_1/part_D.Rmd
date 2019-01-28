@@ -140,7 +140,17 @@ make_density <- function(f, lower = 0, upper = 1) {
 ```
 
 ```{r}
-thetaMean <- mean(theta_samples$value)
+thetaSampleMean <- mean(theta_samples$value)
+thetaExpectedMean <- integrate(
+  f = function(theta) theta * f_normalizedDensity(theta),
+  lower = 0,
+  upper = 1
+)$value
+means <- tibble(
+  xint = c(thetaSampleMean, thetaExpectedMean),
+  grp = c("Sample mean", "Expected mean")
+)
+
 binWidth = 0.001
 theta_samples %>%
   ggplot() +
@@ -151,16 +161,20 @@ theta_samples %>%
     size = 0
   ) +
   geom_vline(
-    xintercept = thetaMean,
-    show.legend = TRUE,
-    aes(col = 'Sample mean')
+    data = means,
+    aes(
+      xintercept = xint,
+      col = grp,
+      linetype = c("dashed", "dotted")
+    )
   ) +
   stat_function(
     fun = make_density(f_density),
     xlim = c(0, 1),
     aes(col = 'f')
   ) +
-  xlim(0, 1)
+  xlim(0, 1) +
+  guides(linetype = FALSE)
 ```
 
 
