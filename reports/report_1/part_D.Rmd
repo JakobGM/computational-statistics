@@ -60,6 +60,7 @@ $$
 
 ```{r}
 construct_f <- function(y) {
+  #' Construct f function which is scaled to max(f) = 1
   unscaled_log_f <- function(theta) {
     y[1] * log(2 + theta) + (y[2] + y[3]) * log(1 - theta) + y[4] * log(theta)
   }
@@ -79,15 +80,23 @@ construct_f <- function(y) {
 }
 
 sample_theta <- function(n, y) {
+  #' Generate n theta samples from f function, given 4-vector y
   f_density <- construct_f(y = y)
   found <- vector()
   while(length(found) < n) {
-    x <- runif(1)
+    # Number of samples that remain to be found
+    remaining <- n - length(found)
+
+    # These are proposed values that might be accepted...
+    x <- runif(remaining)
+
+    # ... with acceptance probability
     alpha <- f_density(x)
-    u <- runif(1)
-    if (u <= alpha) {
-      found <- c(found, x)
-    }
+
+    # Append the values that get accepted
+    u <- runif(remaining)
+    success <- u <= alpha
+    found <- c(found, x[success])
   }
   return(found)
 }
@@ -113,7 +122,7 @@ ggplot(data = df) + aes(x = value) +
 
 
 ```{r, cache=TRUE}
-N <- 100000
+N <- 10000000
 theta_samples <- enframe(sample_theta(n = N, y = y))
 ```
 ```{r}
@@ -132,7 +141,7 @@ make_density <- function(f, lower = 0, upper = 1) {
 
 ```{r}
 thetaMean <- mean(theta_samples$value)
-binWidth = 0.005
+binWidth = 0.001
 theta_samples %>%
   ggplot() +
   geom_histogram(
