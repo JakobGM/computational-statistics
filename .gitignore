@@ -44,3 +44,5 @@ packrat/src/
 **/*.pdf
 **/*.html
 **/*_files
+reports/report_1/base_cache/
+reports/report_1/part_D_cache/
