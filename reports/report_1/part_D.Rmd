@@ -9,6 +9,7 @@ library(ggplot2)
 library(tibble)
 library(knitr)
 library(kableExtra)
+library(purrr)
 data <- tibble(
   cellCount = c("$y_1 = 125$", "$y_2 = 18$", "$y_3 = 20$", "$y_4 = 34$"),
   probability = c("$\\frac{1}{2} + \\frac{\\theta}{4}$", "$\\frac{1 - \\theta}{4}$", "$\\frac{1 - \\theta}{4}$", "$\\frac{\\theta}{4}$")
@@ -203,4 +204,62 @@ cInverse
 
 ### 4. New prior
 
-(Answer)
+```{r}
+alpha <- 1
+beta <- 5
+tibble(x = c(0, 1)) %>%
+  ggplot(aes(x)) +
+  stat_function(
+    fun = partial(dgamma, shape = alpha, scale = beta),
+    aes(col = "Beta(1, 5)")
+  )
+```
+
+```{r}
+posteriorMean <- function(theta_samples) {
+  weights <- (1 - theta_samples$value) ** 4
+  importanceThetaMean <- sum(theta_samples$value * weights) / sum(weights)
+  return(importanceThetaMean)
+}
+importanceThetaMean <- posteriorMean(theta_samples = theta_samples)
+
+generatePosterior <- function(y, alpha = 1, beta = 5) {
+  log_unscaled = function(theta) {
+    y[1] * log(2 + theta) + (y[2] + y[3] + beta - 1) * log(1 - theta) + (y[4] + alpha - 1) * log(theta)
+  }
+  normalizingConstant <- integrate(
+    f = function(theta) exp(log_unscaled(theta)),
+    lower = 0,
+    upper = 1
+  )$value
+  print(normalizingConstant)
+  scaledPosterior <- function(theta) {
+    return(exp(log_unscaled(theta)) /normalizingConstant)
+  }
+  return(scaledPosterior)
+}
+posterior <- generatePosterior(y = y)
+posteriorIntegralMean <- integrate(
+  f = function(theta) theta * posterior(theta),
+  lower = 0,
+  upper = 1
+)$value
+
+meanResults <- tibble(
+  posteriorMeans=c(importanceThetaMean, posteriorIntegralMean),
+  grp=c("importance sampling", "numerical integration")
+)
+
+ggplot(tibble(theta = c(0, 1)), aes(theta)) +
+  geom_vline(
+    data = meanResults,
+    aes(
+      xintercept = posteriorMeans,
+      col = grp
+    ),
+    linetype = c("solid", "dashed"),
+    alpha = 0.8
+  ) +
+  xlim(0, 1) +
+  scale_color_manual(" ", values = c("red", "blue"), labels = c("importance sampling", "numerical integration"))
+```
