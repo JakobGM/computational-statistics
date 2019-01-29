@@ -145,7 +145,7 @@ f_density <- make_density(f_scaled_density)
 ```{r}
 thetaSampleMean <- mean(theta_samples$value)
 thetaExpectedMean <- integrate(
-  f = function(theta) theta * f_normalizedDensity(theta),
+  f = function(theta) theta * f_density(theta),
   lower = 0,
   upper = 1
 )$value
