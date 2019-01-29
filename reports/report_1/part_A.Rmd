@@ -65,7 +65,7 @@ $$
 Inserting $c$ into the density function yields
 
 $$
-\newcommand{c}[]{\frac{\alpha e}{\alpha + e}}
+\newcommand{c}[0]{\frac{\alpha e}{\alpha + e}}
 g(x) =
 \begin{cases}
   \c x^{\alpha - 1}, & 0 < x < 1, \\
