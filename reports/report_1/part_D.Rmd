@@ -260,8 +260,8 @@ meanResults <- tibble(
     newPosteriorIntegralMean
   ),
   grp=c(
-    "Old posterior assymptotic",
-    "New posterior assymptotic",
+    "Old posterior asymptotic",
+    "New posterior asymptotic",
     "Old posterior numerical integration",
     "New posterior numerical integration"
   )
