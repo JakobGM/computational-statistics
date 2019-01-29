@@ -216,12 +216,12 @@ tibble(x = c(0, 1)) %>%
 ```
 
 ```{r}
-posteriorMean <- function(theta_samples) {
-  weights <- (1 - theta_samples$value) ** 4
-  importanceThetaMean <- sum(theta_samples$value * weights) / sum(weights)
+posteriorMean <- function(theta_samples, beta = 5) {
+  weights <- (1 - theta_samples) ** (beta - 1)
+  importanceThetaMean <- sum(theta_samples * weights) / sum(weights)
   return(importanceThetaMean)
 }
-importanceThetaMean <- posteriorMean(theta_samples = theta_samples)
+importanceThetaMean <- posteriorMean(theta_samples = theta_samples$value)
 
 generatePosterior <- function(y, alpha = 1, beta = 5) {
   log_unscaled = function(theta) {
@@ -238,28 +238,71 @@ generatePosterior <- function(y, alpha = 1, beta = 5) {
   }
   return(scaledPosterior)
 }
-posterior <- generatePosterior(y = y)
-posteriorIntegralMean <- integrate(
-  f = function(theta) theta * posterior(theta),
+newPosterior <- generatePosterior(y = y, beta = 5)
+newPosteriorIntegralMean <- integrate(
+  f = function(theta) theta * newPosterior(theta),
+  lower = 0,
+  upper = 1
+)$value
+
+oldPosterior <- generatePosterior(y = y, beta = 1)
+oldPosteriorIntegralMean <- integrate(
+  f = function(theta) theta * oldPosterior(theta),
   lower = 0,
   upper = 1
 )$value
 
 meanResults <- tibble(
-  posteriorMeans=c(importanceThetaMean, posteriorIntegralMean),
-  grp=c("importance sampling", "numerical integration")
+  posteriorMeans=c(
+    mean(theta_samples$value),
+    importanceThetaMean,
+    oldPosteriorIntegralMean,
+    newPosteriorIntegralMean
+  ),
+  grp=c(
+    "Old posterior assymptotic",
+    "New posterior assymptotic",
+    "Old posterior numerical integration",
+    "New posterior numerical integration"
+  )
 )
 
-ggplot(tibble(theta = c(0, 1)), aes(theta)) +
-  geom_vline(
+# Plot posterior mean progression as samples increase
+row_seq <- seq(0, 10000, 10)
+thetaSubsets <- lapply(row_seq, function(k) theta_samples$value[1:k])
+meanProgression <- tibble(
+  iteration = row_seq,
+  oldPosterior = sapply(thetaSubsets, mean),
+  newPosterior = sapply(thetaSubsets, posteriorMean)
+)
+
+meanProgression %>%
+  ggplot(aes(x = iteration, posteriorMean)) +
+  geom_line(
+    aes(y = oldPosterior, col="Old posterior")
+  ) +
+  geom_line(
+    aes(y = newPosterior, col="New posterior")
+  ) +
+  geom_hline(
     data = meanResults,
     aes(
-      xintercept = posteriorMeans,
+      yintercept = posteriorMeans,
       col = grp
     ),
-    linetype = c("solid", "dashed"),
+    linetype = c("solid", "solid", "dashed", "dashed"),
     alpha = 0.8
   ) +
-  xlim(0, 1) +
-  scale_color_manual(" ", values = c("red", "blue"), labels = c("importance sampling", "numerical integration"))
+  ylim(0.59, 0.625) +
+  theme(legend.position = "bottom") +
+  guides(col=guide_legend(nrow=3, byrow = FALSE)) +
+  ylab("Posterior mean") +
+  xlab("Iteration") +
+  scale_y_continuous(
+    breaks = c(
+      seq(0.59, 0.63, 0.01),
+      round(oldPosteriorIntegralMean, digits = 3),
+      round(newPosteriorIntegralMean, digits = 3)
+    )
+  )
 ```
