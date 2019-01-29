@@ -80,37 +80,24 @@ To find the values of $a$ and $b_{+}$ we take the of derivative of $f^{\star}(x)
 $a = \sqrt{\left(\frac{\alpha - 1}{e}\right)^{\alpha - 1}}$ and $b_{+} = \sqrt{\left(\frac{\alpha + 1}{e}\right)^{\alpha + 1}}$. The function $f^{\star}(x)$ is zero for $x \leq 0$, so it's supremum is 0 in this region, giving us $b_{-} = 0$.
 
 ```{r}
-#B2:
-
-rate <- 100
-n <- 10000000
-
-high_exponents <- function(base, exponent){
-  remainder <- exponent - floor(exponent)
-  prime_factors <- primeFactors(floor(exponent))
-  result = base
-  for (factor in prime_factors){
-    result <- result^factor
-  }
-  result <- result*base^(remainder)
-  return(result)
-}
+rate <- 2000
+n <- 1000000
 
 rou_rf <- function(n, rate){
-  a <- high_exponents((rate - 1)/exp(1), (rate - 1)/2)
-  b_plus <- high_exponents((rate + 1)/exp(1), (rate + 1)/2)
+  log_a <- (rate - 1)/2*log((rate - 1)/exp(1))
+  log_b_plus <- (rate + 1)/2*log((rate + 1)/exp(1))
 
-  x1 <- runif(n)*a
-  x2 <- runif(n)*b_plus
-  random_samples <- tibble(x1, x2)
+  log_x1 <- runif(n) %>% log() %>% add(log_a)
+  log_x2 <- runif(n) %>% log() %>% add(log_b_plus)
+  random_samples <- tibble(log_x1, log_x2)
 
   random_samples <- random_samples %>%
-    mutate(upperBound = ((rate - 1)*(log(x2) - log(x1)) - x2/x1)/2) %>%
-    mutate(inRegion = log(x1) <= upperBound)
+    mutate(upperBound = ((rate - 1)*(log_x2 - log_x1) - exp(log_x2 - log_x1))/2) %>%
+    mutate(inRegion = log_x1 <= upperBound)
 
   accepted_samples <- random_samples %>%
     filter(inRegion == TRUE) %>%
-    mutate(y = x2/x1)
+    mutate(y = exp(log_x2 - log_x1))
 
   return(accepted_samples)
 }
@@ -132,24 +119,25 @@ rou_fixed_size_rf <- function(n, rate){
 }
 
 required_trials <- function(rate){
-  a <- high_exponents((rate - 1)/exp(1), (rate - 1)/2)
-  b_plus <- high_exponents((rate + 1)/exp(1), (rate + 1)/2)
+  log_a <- (rate - 1)/2*log((rate - 1)/exp(1))
+  log_b_plus <- (rate + 1)/2*log((rate + 1)/exp(1))
+
 
   total_attempts <- 0
   accepted_samples <- 0
 
   while (accepted_samples < 1000){
     total_attempts <- total_attempts + 1
-    x1 <- runif(1)*a
-    x2 <- runif(1)*b_plus
-    if(log(x1) <= ((rate - 1)*(log(x2) - log(x1)) - x2/x1)/2){
+    log_x1 <- runif(1) %>% log() %>% add(log_a)
+    log_x2 <- runif(1) %>% log() %>% add(log_b_plus)
+    if(log_x1 <= ((rate - 1)*(log_x2 - log_x1) - exp(log_x2 - log_x1))/2){
       accepted_samples = accepted_samples + 1
     }
   }
   return(total_attempts)
 }
 
-trials_df <- tibble(rate=seq(3,300, 5), trials = seq(3,300, 5) %>% map_dbl(~required_trials(.x)))
+trials_df <- tibble(rate=seq(2,2000, 50), trials = seq(2,2000, 50) %>% map_dbl(~required_trials(.x)))
 trials_df %>%
   ggplot(aes(x=rate, y=trials)) +
   geom_point() +
