@@ -299,7 +299,7 @@ attempts <- tibble(
 )
 attempts %>%
   kable(
-    caption = "Table 3: Required proposals for each accepted sample"
+    caption = "Table 3: Required proposals for each accepted sample",
     col.names = c("Method", "Required proposals")
   ) %>%
   kable_styling()
@@ -312,16 +312,70 @@ algorithm within the bounds of the assigned problem.
 
 ### 4. New prior
 
+Previously, we used the prior of theta to be $p(\theta) \sim Beta(1, 1) \equiv 1$.
+Now denote the posterior distribution for this prior as
+
+$$
+f_{1, 1} (\vec{y}|\theta) \propto (2 + \theta)^{y_1}(1 - \theta)^{y_2 + y_3} \theta^{y_4}
+$$
+
+Now we want to investigate the posterior mean under a new prior for $\theta$, Beta(1, 5).
+We can compare these prior distributions as follows
+
 ```{r}
 alpha <- 1
 beta <- 5
 tibble(x = c(0, 1)) %>%
   ggplot(aes(x)) +
   stat_function(
-    fun = partial(dgamma, shape = alpha, scale = beta),
+    fun = partial(dbeta, shape1 = alpha, shape2 = beta),
     aes(col = "Beta(1, 5)")
+  ) +
+  stat_function(
+    fun = partial(dbeta, shape1 = 1, shape2 = 1),
+    aes(col = "Beta(1, 1)")
+  ) +
+  scale_x_continuous(
+    name = expression(theta)
+  ) +
+  scale_y_continuous(
+    name = expression(p(theta)),
+    limits = c(0, NA)
+  ) +
+  labs(
+    title = "Comparison of prior distributions"
   )
 ```
+
+As you can see, this new Beta(1, 5) prior heavily favours lower values for $\theta$,
+compared to the uniform prior, which does not favour any domain in particular.
+We can therefore expect a lower posterior mean under the new prior.
+
+The new posterior distribution is denoted as
+
+$$
+f_{1, 5} (\vec{y}|\theta) \propto (2 + \theta)^{y_1}(1 - \theta)^{y_2 + y_3 + \mathbf{4}} \theta^{y_4}
+$$
+
+We can now use importance sampling weights in order to "resample" our existing samples from the
+old posterior distribution to the new one. $f_{1, 1}$ is therefore our proposal density, and
+$f_{1, 5}$ our target density. The importance sampling weight becomes
+
+$$
+w(\theta_i) = \frac{f_{1, 5}(\theta_i)}{f_{1, 1}(\theta_i)} \propto (1 - \theta)^4
+$$
+
+In order to calculate the posterior mean under the new prior, we use the identity function
+as the objective function $h(\theta_i) = \theta_i$.
+
+Since neither $f_{1, 1}$ nor $f_{1, 5}$ are normalized, we use self-normalizing importance
+sampling in order to calculate the new posterior mean
+
+$$
+E\big[\theta~|~p(\theta) \sim Beta(1, 5)\big] = \frac{\sum_{i = 1}^{M} h(\theta_i) w(\theta_i)}{\sum_{i = 1}^{M} w(\theta_i)}
+$$
+
+We implement this in R, and "resample" the $M$ previously generated samples.
 
 ```{r}
 posteriorMean <- function(theta_samples, beta = 5) {
@@ -330,7 +384,16 @@ posteriorMean <- function(theta_samples, beta = 5) {
   return(importanceThetaMean)
 }
 importanceThetaMean <- posteriorMean(theta_samples = theta_samples$value)
+```
 
+Again, for comparison, we implement the posterior densities for the old and new prior,
+and calculate the expected posterior mean by numerical integration.
+
+$$
+E\big[\theta~|~p(\theta) \sim Beta(1, 5)\big] = \int_0^1 \theta \cdot f(\theta | \vec{y})(1 - \theta)^4~\text{d}\theta.
+$$
+
+```{r}
 generatePosterior <- function(y, alpha = 1, beta = 5) {
   log_unscaled = function(theta) {
     y[1] * log(2 + theta) + (y[2] + y[3] + beta - 1) * log(1 - theta) + (y[4] + alpha - 1) * log(theta)
@@ -340,9 +403,8 @@ generatePosterior <- function(y, alpha = 1, beta = 5) {
     lower = 0,
     upper = 1
   )$value
-  print(normalizingConstant)
   scaledPosterior <- function(theta) {
-    return(exp(log_unscaled(theta)) /normalizingConstant)
+    return(exp(log_unscaled(theta)) / normalizingConstant)
   }
   return(scaledPosterior)
 }
@@ -359,13 +421,29 @@ oldPosteriorIntegralMean <- integrate(
   lower = 0,
   upper = 1
 )$value
+```
 
+We now have two different posterior densities, which are compared in the following plot
+
+```{r}
 meanResults <- tibble(
   posteriorMeans=c(
     mean(theta_samples$value),
     importanceThetaMean,
     oldPosteriorIntegralMean,
     newPosteriorIntegralMean
+  ),
+  prior = c(
+    "Beta(1, 1)",
+    "Beta(1, 5)",
+    "Beta(1, 1)", 
+    "Beta(1, 5)"
+  ),
+  method = c(
+    "Sampling",
+    "Sampling",
+    "Numerical", 
+    "Numerical"
   ),
   grp=c(
     "Old posterior asymptotic",
@@ -375,42 +453,100 @@ meanResults <- tibble(
   )
 )
 
-# Plot posterior mean progression as samples increase
-row_seq <- seq(0, 10000, 10)
+ggplot(data = data.frame(x = c(0, 1))) +
+  aes(x) +
+  stat_function(
+    fun = oldPosterior,
+    xlim = c(0, 1),
+    col = "red"
+  ) +
+  stat_function(
+    fun = newPosterior,
+    xlim = c(0, 1),
+    col = "blue"
+  ) +
+  geom_vline(
+    data = meanResults,
+    mapping = aes(
+      xintercept = posteriorMeans,
+      col = prior,
+      linetype = method
+    )
+  ) +
+  scale_x_continuous(
+    name = expression(theta)
+  ) +
+  scale_y_continuous(
+    name = expression(p(theta))
+  ) +
+  scale_colour_manual(
+    values = c("red", "blue")
+  ) +
+  labs(
+    title = "Posterior density comparison"
+  )
+```
+
+Observe that for both posterior distributions, the sample mean perfectly coincides with the theoretical numerical mean.
+The distribution under the new prior is also shifted to the left, as previously postulated.
+
+The sampling mean converges towards the theoretical mean. The rate of convergence is visualized in the following plot.
+
+```{r}
+# Take the first 10 thousand iterations with stepsize = 10
+row_seq <- seq(10, 10000, 10)
+
+# Subset the first k samples of theta under the uniform prior
 thetaSubsets <- lapply(row_seq, function(k) theta_samples$value[1:k])
+
+# Calculate the posterior mean under the old and new prior
 meanProgression <- tibble(
   iteration = row_seq,
   oldPosterior = sapply(thetaSubsets, mean),
   newPosterior = sapply(thetaSubsets, posteriorMean)
 )
 
+# Plot the posterior mean progressions
 meanProgression %>%
   ggplot(aes(x = iteration, posteriorMean)) +
   geom_line(
-    aes(y = oldPosterior, col="Old posterior")
+    aes(y = oldPosterior),
+    col = "red"
   ) +
   geom_line(
-    aes(y = newPosterior, col="New posterior")
+    aes(y = newPosterior),
+    col = "blue"
   ) +
   geom_hline(
     data = meanResults,
     aes(
       yintercept = posteriorMeans,
-      col = grp
+      col = prior,
+      linetype = method
     ),
-    linetype = c("solid", "solid", "dashed", "dashed"),
     alpha = 0.8
   ) +
-  ylim(0.59, 0.625) +
   theme(legend.position = "bottom") +
   guides(col=guide_legend(nrow=3, byrow = FALSE)) +
   ylab("Posterior mean") +
   xlab("Iteration") +
   scale_y_continuous(
     breaks = c(
-      seq(0.59, 0.63, 0.01),
+      seq(0.59, 0.64, 0.01),
       round(oldPosteriorIntegralMean, digits = 3),
       round(newPosteriorIntegralMean, digits = 3)
-    )
+    ),
+    limits = c(NA, NA)
+  ) +
+  scale_colour_manual(
+    values = c("red", "blue")
+  ) +
+  theme(
+    panel.grid.minor.y = element_blank()
+  ) + labs(
+    title = "Posterior mean progression"
   )
 ```
+
+In both cases, it seems to be enough with ~5k samples in order to calculate a relatively accurate
+posterior mean for the $\theta$ parameter.
