@@ -123,13 +123,13 @@ The expression for the variance becomes $Var(X) = c\left(\frac{1}{\alpha + 2} + 
 We now want to generate random samples from $g(x)$. Since we know the inverse of the cumulative distribution, we can use the inverse transform technique.
 
 ```{r}
-rg <- function(n, rate = 1) {
+rg <- function(n, alpha = 1) {
   u <- runif(n = n)
-  boundary <- exp(1) / (rate + exp(1))
+  boundary <- exp(1) / (alpha + exp(1))
   left <- u < boundary
   right <- !left
-  u[left] <- (u[left] / boundary) ** (1 / rate)
-  u[right] <- -log((1 - u[right]) / (boundary * rate))
+  u[left] <- (u[left] / boundary) ** (1 / alpha)
+  u[right] <- -log((1 - u[right]) / (boundary * alpha))
   return(enframe(u))
 }
 ```
@@ -137,12 +137,12 @@ rg <- function(n, rate = 1) {
 We also implement the density function for the purpose of comparison
 
 ```{r}
-dg <- function(x, rate = 1) {
-  normalizing_constant <- rate * exp(1) / (rate + exp(1))
+dg <- function(x, alpha = 1) {
+  normalizing_constant <- alpha * exp(1) / (alpha + exp(1))
   d <- rep(0, length(x))
   left_indices <- 0 < x & x < 1
   right_indices <- 1 <= x
-  d[left_indices] <- normalizing_constant * (x[left_indices] ** (rate - 1))
+  d[left_indices] <- normalizing_constant * (x[left_indices] ** (alpha - 1))
   d[right_indices] <- normalizing_constant * exp(-x[right_indices])
   return(d)
 }
@@ -153,8 +153,8 @@ it with the theoretical density
 
 ```{r}
 samples <- 1000000
-rate <- 0.7
-g_samples <- rg(n = samples, rate = rate)
+alpha <- 0.7
+g_samples <- rg(n = samples, alpha = alpha)
 ggplot() +
   geom_histogram(
     data = g_samples,
@@ -163,7 +163,7 @@ ggplot() +
     boundary = 0
   ) + stat_function(
     fun = dg,
-    args = list(rate = rate),
+    args = list(alpha = alpha),
     aes(col = 'Theoretical density.')
   ) +
   geom_vline(
@@ -176,9 +176,9 @@ ggplot() +
   xlim(0, 5)
 ```
 ```{r}
-c <- rate*exp(1)/(rate + exp(1))
-mean <- c*(1/(rate + 1) + 2/exp(1))
-second_moment <- c*(1/(rate+2) + 5/exp(1))
+c <- alpha*exp(1)/(alpha + exp(1))
+mean <- c*(1/(alpha + 1) + 2/exp(1))
+second_moment <- c*(1/(alpha+2) + 5/exp(1))
 variance <- second_moment - mean^2
 
 results <- list(
@@ -204,7 +204,7 @@ box_muller <- function(n){
   return(c(y1, y2)[1:n])
 }
 
-std_normal_dist <- as_mapper(~1/sqrt(2*pi)*exp(-.x^2/2))
+dnorm_std <- partial(dnorm, mean = 0, sd = 1)
 n <- 1000000
 x <- box_muller(n)
 
@@ -214,12 +214,12 @@ results <- list(mean = 0,
                 variance = 1,
                 sample_variance = var(x))
 
-test_plot <- sample %>%
+box_muller_plot <- sample %>%
   ggplot() + 
   geom_histogram(aes(x=value, y=..density..), binwidth=0.05) + 
-  stat_function(fun=std_normal_dist, color="red", size=1)
+  stat_function(fun=dnorm_std, color="red", size=1)
 
-print(test_plot)
+print(box_muller_plot)
 print(results)
 ```
 
@@ -249,22 +249,23 @@ n <- 10000
 
 sample <- multivariate_normal(mean, covariance, n)
 
-sample_mean <- sample %>%
+sample_tbl <- sample %>%
   map(t) %>%
   map(as_tibble) %>%
-  bind_rows() %>%
+  bind_rows()
+
+sample_mean <- sample_tbl %>% 
   colMeans()
 
-sample_covariance <- sample %>%
-  map(t) %>%
-  map(as_tibble) %>%
-  bind_rows() %>%
+sample_covariance <- sample_tbl %>% 
   cov()
 
 results <- list(mean=mean,
-                sample_mean=as.matrix(sample_mean),
+                sample_mean=as.numeric(sample_mean),
                 covariance=covariance,
                 sample_covariance=as.matrix(sample_covariance))
+colnames(results$sample_covariance) <- NULL
+rownames(results$sample_covariance) <- NULL
 print(results)
 ```
 

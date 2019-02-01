@@ -5,7 +5,7 @@
 
 ## (a) Acceptance probability
 
-The acceptance probability is the inverse of the constant $c$ used in the rejection-sampling algorithm. The constant $c$ is chosen to be the smallest value that satisfies $c \leq \frac{f(x)}{g(x)}$. 
+The acceptance probability is the inverse of the constant $c$ used in the rejection-sampling algorithm. The constant $c$ is chosen to be the smallest value that satisfies $c \geq \frac{f(x)}{g(x)}$. 
 
 With $f(x) = \frac{1}{\Gamma(\alpha)}x^{\alpha -1}e^{-x}$ and $g(x)$ as specified in A.2, we must choose $c$ such that
 
@@ -13,53 +13,47 @@ $$
 c \geq \frac{f(x)}{g(x)} = \begin{cases}\frac{1}{\Gamma(\alpha)}\frac{\alpha + e}{e\alpha}\frac{1}{e^x},\quad 0 < x < 1 \\ 
 \frac{1}{\Gamma(\alpha)}\frac{\alpha + e}{e\alpha}x^{\alpha - 1},\quad x \geq 1\end{cases}
 $$
-This functions attains it's maximum at $x=1$, and $\frac{f(x)}{g(x)}\mid_{x=1} = \frac{1}{\Gamma(\alpha)}\frac{\alpha + e}{e\alpha}$ and choosing $c \frac{f(x)}{g(x)}\mid_{x=1}$ satisfies the criterion above. This leads to the acceptance probability $\Gamma(\alpha)\frac{e\alpha}{e + \alpha}$.
+This functions attains it's maximum at $x=1$, where we find $\frac{f(x)}{g(x)}\mid_{x=1} = \frac{1}{\Gamma(\alpha)}\frac{\alpha + e}{e\alpha}$ and by choosing $c = \frac{f(x)}{g(x)}\mid_{x=1}$ we satisfy the criterion above. This leads to the acceptance probability $\Gamma(\alpha)\frac{e\alpha}{e + \alpha}$.
 
 ## (b) Rejection-sampling implementation
 
 
 ```{r}
 n <- 100000
-rate <- 0.4
+alpha <- 0.4
 
-rs_rf <- function(n, rate){
-  dg_fixed <- partial(dg, rate=rate)
-  df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
-
-  c <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
-  alpha_mapper <- as_mapper(~1/c*df(.x)/dg_fixed(.x))
-
-  xs <- rg(n, rate=rate) %>% use_series(value)
-  alpha <- xs %>% map_dbl(alpha_mapper)
-
-  accepted_xs <- xs %>% keep(runif(n) < alpha) %>% enframe
-}
-
-rs_fixed_size_rf <- function(n, rate){
-  overall_acceptance_probability <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
-  expected_required_n <- n*overall_acceptance_probability
-  df <- rs_rf(expected_required_n, rate)
-  while (TRUE){
-    if (nrow(df) < n){
-      df <- bind_rows(df, rs_rf((n - nrow(df))*overall_acceptance_probability, rate))
-    }
-    else if (nrow(df) > n){
-      return(df[1:n,])
-    }
-    else{
-      return(df)
-    }
+rejection_sampling_f <- function(n, alpha){
+  dg_fixed <- partial(dg, alpha=alpha)
+  df <- as_mapper(~1/gamma(alpha)*.x^(alpha - 1)*exp(-.x))
+  c <- (alpha + exp(1))/(alpha*exp(1))/gamma(alpha)
+  
+  n_remaining <- n
+  samples <- vector()
+  
+  while (n_remaining > 0){
+    acceptance_threshold_mapper <- as_mapper(~1/c*df(.x)/dg_fixed(.x))
+    
+    xs <- rg(n_remaining, alpha=alpha) %>% use_series(value)
+    acceptance_threshold <- xs %>% map_dbl(acceptance_threshold_mapper)
+    
+    accepted_xs <- xs %>%
+      keep(runif(n_remaining) < acceptance_threshold) %>%
+      enframe()
+    samples <- c(samples, accepted_xs$value)
+    
+    n_remaining <- n_remaining - nrow(accepted_xs)
   }
+  return(samples)
 }
 
-random_f <- rs_fixed_size_rf(n, rate)
+rv_f <- rejection_sampling_f(n, alpha)
 
-df <- as_mapper(~1/gamma(rate)*.x^(rate - 1)*exp(-.x))
-dg_fixed <- partial(dg, rate=rate)
-c <- (rate + exp(1))/(rate*exp(1))/gamma(rate)
+df <- as_mapper(~1/gamma(alpha)*.x^(alpha - 1)*exp(-.x))
+dg_fixed <- partial(dg, alpha=alpha)
+c <- (alpha + exp(1))/(alpha*exp(1))/gamma(alpha)
 dg_scaled <- as_mapper(~dg_fixed(.x)*c)
 
-ggplot(random_f) +
+ggplot(rv_f %>% enframe()) +
   geom_histogram(aes(x=value, y=..density..), binwidth=0.05, boundary=0) +
   stat_function(fun=df, color='red', size=1) +
   stat_function(fun=dg_scaled, color='green', size=1, linetype="dashed") +
@@ -79,79 +73,71 @@ print(paste("Acceptance probability:", 1/c))
 To find the values of $a$ and $b_{+}$ we take the of derivative of $f^{\star}(x)$ and $x^2f^{\star}(x)$and set it equal to zero. This gives us the values for which the two functions are maximized. By evaluating the functions at these points, $x = \sqrt{\alpha - 1}$ and $x = \sqrt{\alpha + 1}$ respectively, one obtains that
 $a = \sqrt{\left(\frac{\alpha - 1}{e}\right)^{\alpha - 1}}$ and $b_{+} = \sqrt{\left(\frac{\alpha + 1}{e}\right)^{\alpha + 1}}$. The function $f^{\star}(x)$ is zero for $x \leq 0$, so it's supremum is 0 in this region, giving us $b_{-} = 0$.
 
+Neither the values of $a$ and $b_{+}$ nor the function $f^{\star}(x)$ is easy to evaluate numerically for high values of $alpha$. This problem is solved by sampling directly from the distribution of $Y_1 = \log(X_1)$ and $Y_2 = \log(X_2)$, and proceeding by checking whether the values of $Y_1$ and $Y_2$ is such that $(X_1, X_2}$ falls within the region $C_f$.
+
+The condition on a realization of $Y$ for checking whether $X$ is in $C_f$ becomes 
+
+$$
+y_1 = \log(x_1) \leq \frac{1}{2}\left[(\alpha - 1)(\log(x_2) - \log(x_1)) - e^{\log(x_2) - \log(x_1)}\right]
+$$
+To be able to sample from the distribution of $Y$ we need to find the inverse cumulative distribution function. The distribution function of $Y_1$ is given by $f_{Y_1}(x) = e^{x - \log(a)}\mathrm{1}_{\{x \leq \log(a)\}}$. The cumulative distribution is given by $F_{Y_1}(x) = e^{x - \log(a)}$. Setting $u = F_{Y_1}(x)$ yields $x = \log(u) + \log(a)$. In an equivalent fashion, we obtain $x = \log(u) + \log(b_{+})$ for sampling $Y_2$.
+
 ```{r}
-rate <- 2000
-n <- 1000000
+alpha <- 500
+n <- 10000000
 
-rou_rf <- function(n, rate){
-  log_a <- (rate - 1)/2*log((rate - 1)/exp(1))
-  log_b_plus <- (rate + 1)/2*log((rate + 1)/exp(1))
-
-  log_x1 <- runif(n) %>% log() %>% add(log_a)
-  log_x2 <- runif(n) %>% log() %>% add(log_b_plus)
-  random_samples <- tibble(log_x1, log_x2)
-
-  random_samples <- random_samples %>%
-    mutate(upperBound = ((rate - 1)*(log_x2 - log_x1) - exp(log_x2 - log_x1))/2) %>%
-    mutate(inRegion = log_x1 <= upperBound)
-
-  accepted_samples <- random_samples %>%
-    filter(inRegion == TRUE) %>%
-    mutate(y = exp(log_x2 - log_x1))
-
-  return(accepted_samples)
-}
-
-rou_fixed_size_rf <- function(n, rate){
-  df <- rou_rf(n, rate)
-  estimated_acceptance_probability <- nrow(df)/n
-  while (TRUE){
-    if (nrow(df) < n){
-      df <- bind_rows(df, rou_rf((n - nrow(df))/estimated_acceptance_probability, rate))
-    }
-    else if (nrow(df) > n){
-      return(df[1:n,])
-    }
-    else{
-      return(df)
-    }
+ratio_of_uniforms_f <- function(n, alpha){
+  n_remaining <- n
+  attempts <- 0
+  samples <- vector()
+  
+  log_a <- (alpha - 1)/2*log((alpha - 1)/exp(1))
+  log_b_plus <- (alpha + 1)/2*log((alpha + 1)/exp(1))
+  
+  while (n_remaining > 0) {
+    log_x1 <- runif(n_remaining) %>% log() %>% add(log_a)
+    log_x2 <- runif(n_remaining) %>% log() %>% add(log_b_plus)
+    random_samples <- tibble(log_x1, log_x2)
+  
+    random_samples <- random_samples %>%
+      mutate(upperBound = ((alpha - 1)*(log_x2 - log_x1)
+                           - exp(log_x2 - log_x1))/2) %>%
+      mutate(inRegion = log_x1 <= upperBound)
+  
+    accepted_samples <- random_samples %>%
+      filter(inRegion == TRUE) %>%
+      mutate(y = exp(log_x2 - log_x1))
+    
+    samples <- c(samples, accepted_samples$y)
+    attempts <- attempts + n_remaining
+    n_remaining <- n_remaining - nrow(accepted_samples)
   }
+  return(list(samples=samples, attempts=attempts))
 }
 
-required_trials <- function(rate){
-  log_a <- (rate - 1)/2*log((rate - 1)/exp(1))
-  log_b_plus <- (rate + 1)/2*log((rate + 1)/exp(1))
-
-
-  total_attempts <- 0
-  accepted_samples <- 0
-
-  while (accepted_samples < 1000){
-    total_attempts <- total_attempts + 1
-    log_x1 <- runif(1) %>% log() %>% add(log_a)
-    log_x2 <- runif(1) %>% log() %>% add(log_b_plus)
-    if(log_x1 <= ((rate - 1)*(log_x2 - log_x1) - exp(log_x2 - log_x1))/2){
-      accepted_samples = accepted_samples + 1
-    }
-  }
-  return(total_attempts)
-}
-
-trials_df <- tibble(rate=seq(2,2000, 50), trials = seq(2,2000, 50) %>% map_dbl(~required_trials(.x)))
-trials_df %>%
-  ggplot(aes(x=rate, y=trials)) +
+alphas <- seq(2,2000, 50)
+rf_n <- partial(ratio_of_uniforms_f, n=1000)
+attempts_df <- tibble(alpha=alphas, attempts = alphas %>% map_dbl(~rf_n(.x)$attempts))
+attempts_df %>%
+  ggplot(aes(x=alpha, y=attempts)) +
   geom_point() +
   geom_smooth()
 
-accepted_samples <- rou_fixed_size_rf(n, rate)
+accepted_samples <- ratio_of_uniforms_f(n, alpha)$samples %>%
+  enframe() %>% 
+  set_names(c('idx', 'y'))
 
 accepted_samples %>%
   ggplot() +
   geom_histogram(aes(x=y, y=..density..), binwidth=0.2) +
-  stat_function(aes(x=y), fun = dgamma, args = list(shape = rate, scale = 1))
+  stat_function(aes(x=y), fun = dgamma, args = list(shape = alpha, scale = 1))
 
-gamma_mean <- rate
-print(c(gamma_mean, mean(accepted_samples$y)))
+results <- list(mean=alpha,
+                sample_mean=mean(accepted_samples$y),
+                variance=alpha,
+                sample_variance=var(accepted_samples$y))
+
+print(results)
 ```
 
 
@@ -162,15 +148,15 @@ print(c(gamma_mean, mean(accepted_samples$y)))
 ### 3. Arbitrary gamma function
 
 ```{r}
-random_sample_from_f <- function(n, rate){
-  if (rate < 1){
-    result <- rs_fixed_size_rf(n, rate)$value
+random_sample_from_f <- function(n, alpha){
+  if (alpha < 1){
+    result <- rejection_sampling_f(n, alpha)
   }
-  else if (rate == 1){
-    result <- rexp(n, rate=rate)$value
+  else if (alpha == 1){
+    result <- rexp(n, rate=1)$value
   }
   else{
-    result <- rou_fixed_size_rf(n, rate)$y
+    result <- ratio_of_uniforms_f(n, alpha)$samples
   }
   return(result)
 }
