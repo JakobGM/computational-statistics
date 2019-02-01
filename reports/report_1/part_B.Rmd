@@ -19,8 +19,8 @@ This functions attains it's maximum at $x=1$, where we find $\frac{f(x)}{g(x)}\m
 
 
 ```{r}
-n <- 100000
-alpha <- 0.4
+n <- 1000000
+alpha <- 0.8
 
 rejection_sampling_f <- function(n, alpha){
   dg_fixed <- partial(dg, alpha=alpha)
@@ -46,21 +46,26 @@ rejection_sampling_f <- function(n, alpha){
   return(samples)
 }
 
-rv_f <- rejection_sampling_f(n, alpha)
+samples <- rejection_sampling_f(n, alpha)
 
 df <- as_mapper(~1/gamma(alpha)*.x^(alpha - 1)*exp(-.x))
 dg_fixed <- partial(dg, alpha=alpha)
 c <- (alpha + exp(1))/(alpha*exp(1))/gamma(alpha)
 dg_scaled <- as_mapper(~dg_fixed(.x)*c)
 
-ggplot(rv_f %>% enframe()) +
+ggplot(samples %>% enframe()) +
   geom_histogram(aes(x=value, y=..density..), binwidth=0.05, boundary=0) +
   stat_function(fun=df, color='red', size=1) +
-  stat_function(fun=dg_scaled, color='green', size=1, linetype="dashed") +
+  stat_function(fun=dg_scaled, color='blue', size=1, linetype="dashed") +
   ylim(0, 1) +
   xlim(0, NA)
 
+results = list(mean=alpha,
+               sample_mean=mean(samples),
+               variance=alpha,
+               sample_variance=var(samples))
 print(paste("Acceptance probability:", 1/c))
+print(results)
 
 ```
 
@@ -148,7 +153,10 @@ print(results)
 ### 3. Arbitrary gamma function
 
 ```{r}
-random_sample_from_f <- function(n, alpha){
+alpha <- 50
+beta <- 10
+
+random_sample_from_f <- function(n, alpha, beta){
   if (alpha < 1){
     result <- rejection_sampling_f(n, alpha)
   }
@@ -158,7 +166,13 @@ random_sample_from_f <- function(n, alpha){
   else{
     result <- ratio_of_uniforms_f(n, alpha)$samples
   }
-  return(result)
+  return(result/beta)
 }
+
+random_sample_from_f(1000000, alpha, beta) %>%
+  enframe() %>%
+  ggplot() +
+  geom_histogram(aes(x=value, y=..density..), binwidth=0.05) +
+  stat_function(fun = partial(dgamma, shape=alpha, rate=beta), color='red', size=1)
 ```
 
