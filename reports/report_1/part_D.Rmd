@@ -22,10 +22,10 @@ data %>%
   kable_styling()
 ```
 
-The multinomial mass function is given (proportionally) by
+The multinomial mass function is given, proportionally, by
 
 $$
-f(\vec{y} | \theta) \propto (2 + \theta)^{y_1} (1-\theta)^{y_2 + y_3} \theta^{y_4}
+f(\vec{y} | \theta) \propto (2 + \theta)^{y_1} (1-\theta)^{y_2 + y_3} \theta^{y_4}.
 $$
 
 Using Beta(1, 1) as a prior for $\theta$, i.e. a uniform prior, yields the following posterior density
@@ -42,13 +42,21 @@ Here we have introduced the unknown normalizing constant $d$ for $h(\theta | \ve
 
 ### 1. Rejection sampling algorithm
 
-We will now implement the rejection sampling algorithm for $f(\theta|\vec{y})$ with $g(\theta | \vec{y}) = 1 \sim \mathcal{U}(0, 1)$ as the proposal density.
+We will now implement the rejection sampling algorithm for $f(\theta|\vec{y})$.
+The proposal density, $g(\theta | \vec{y})$, is chosen to be the uniform distribution $\mathcal{U}(0, 1)$.
+Thus,
+
+$$
+g(\theta | \vec{y}) \equiv 1.
+$$
+
 The acceptance probability thus becomes
 
 $$
 \alpha = \frac{1}{c} \cdot \frac{f(\theta)}{g(\theta)} = \frac{d}{c} \cdot h(\theta | \vec{y}) \in [0, 1].
 $$
-Notice that neither $c$ nor $d$ are known to us, but we can approximate their proportion as
+
+Notice that neither $c$ nor $d$ are known to us, but we can numerically approximate their proportion as
 
 $$
 \frac{1}{\beta} := \frac{c}{d} = \max_{\theta} h(\theta | \vec{y})
@@ -59,12 +67,19 @@ $$
 \alpha = \beta \cdot h(\theta | \vec{y})
 $$
 
+We now implement a function constructor, which given $\vec{y}$, returns $\hat{f}(\theta)$ such that
+$\max_{\theta} \hat{f}(\theta) = 1$.
+
 ```{r}
 construct_f <- function(y) {
-  #' Construct f function which is scaled to max(f) = 1
+  #' Return proportional distribution function for f which satisfies max(f) = 1
+
+  # Proportional function of f in log-space
   unscaled_log_f <- function(theta) {
     y[1] * log(2 + theta) + (y[2] + y[3]) * log(1 - theta) + y[4] * log(theta)
   }
+
+  # Find the maxima of this function in log-space
   log_maxima <- optimize(
     f = unscaled_log_f,
     maximum = TRUE,
@@ -79,7 +94,28 @@ construct_f <- function(y) {
   }
   return(scaled_f)
 }
+```
 
+Remember that this is not a proper density function, as it does not integrate to $1$.
+Another function constructor can be implemented to normalize $\hat{f}$. We will use
+this function later for plotting comparisons.
+
+```{r}
+make_density <- function(f, lower = 0, upper = 1) {
+  #' Given f, returns a new function which integrates to 1 over the given interval
+  normalizer = integrate(f, lower = lower, upper = upper)$value
+  normalized_function <- function(...) {
+    return(f(...) / normalizer)
+  }
+  return(normalized_function)
+}
+```
+
+We can now implement the rejection sampling algorithm, using the constructor function.
+The function will also return the total number of generated proposals, which will be
+used in subtask c).
+
+```{r}
 sample_theta <- function(n, y) {
   #' Generate n theta samples from f function, given 4-vector y
   #' Returns a list with thetas key to $theta,
@@ -107,6 +143,9 @@ sample_theta <- function(n, y) {
 }
 ```
 
+We can now plot the acceptance probability, $\alpha$, as a function of $\theta$.
+We will here use $\vec{y} = (125, 18, 20, 34)$, as in the provided dataset.
+
 ```{r}
 y <- c(125, 18, 20, 34)
 f_scaled_density <- construct_f(y = y)
@@ -115,46 +154,74 @@ ggplot(data = df) + aes(x = value) +
   stat_function(
     fun = f_scaled_density,
     xlim = c(0, 1),
-    mapping = aes(col = 'Density'),
+    mapping = aes(col = 'Acceptance probability'),
     geom = "area",
     fill = "gray"
   ) +
   geom_hline (
     yintercept = 1,
     mapping = aes(col = 'Uniform distribution')
+  ) +
+  scale_y_continuous(
+    name = expression(alpha)
+  ) +
+  scale_x_continuous(
+    name = expression(theta)
+  ) +
+  labs(
+    caption = "Acceptance probability as a function of proposed parameter theta."
   )
 ```
 
+We can now observe that the rejection algorithm will sample values mostly within the interval $[0.5, 0.75]$.
+Realized samples will be investigated in the following section.
+
+### 2. Posterior mean by Monte-Carlo integration
+
+Now we sample ten million samples, $\theta_i$, from the implemented rejection algorithm.
 
 ```{r, cache=TRUE}
-N <- 10000000
-theta_sampling_result <- sample_theta(n = N, y = y)
+M <- 10000000
+theta_sampling_result <- sample_theta(n = M, y = y)
 theta_samples <- enframe(theta_sampling_result$theta)
-theta_tries <- theta_sampling_result$tries
 ```
-```{r}
-make_density <- function(f, lower = 0, upper = 1) {
-  normalizer = integrate(f, lower = lower, upper = upper)$value
-  normalized_function <- function(...) {
-    return(f(...) / normalizer)
-  }
-  return(normalized_function)
-}
-f_density <- make_density(f_scaled_density)
-```
+
+The posterior mean can be practically derived from the samples as
+
+$$
+E\big[\theta~|~p(\theta) \sim \mathcal{U}(0, 1)\big] \approx \frac{1}{M} \sum_{i = 1}^M \theta_i
+$$
+Or equivalently, in R
 
 ```{r}
 thetaSampleMean <- mean(theta_samples$value)
+```
+
+In order to check the correctness of the rejection sampling algorithm, we can approximate the posterior mean
+by numerically solving the integral
+
+$$
+E\big[\theta~|~p(\theta) \sim \mathcal{U}(0, 1)\big] = \int_0^1 \theta \cdot f(\theta | \vec{y})~\text{d}\theta.
+$$
+
+This is done by using the $\mathtt{integrate}$ R function
+
+```{r}
+f_density <- make_density(f_scaled_density)
 thetaExpectedMean <- integrate(
   f = function(theta) theta * f_density(theta),
   lower = 0,
   upper = 1
 )$value
+```
+
+All these results can now be shown in a comparison plot.
+
+```{r}
 means <- tibble(
   xint = c(thetaSampleMean, thetaExpectedMean),
-  grp = c("Sample mean", "Expected mean")
+  grp = c("Sample mean", "Numerical mean")
 )
-
 binWidth = 0.001
 theta_samples %>%
   ggplot() +
@@ -175,31 +242,72 @@ theta_samples %>%
   stat_function(
     fun = f_density,
     xlim = c(0, 1),
-    aes(col = 'f')
+    aes(col = 'Theoretical density')
   ) +
-  xlim(0, 1) +
-  guides(linetype = FALSE)
+  guides(linetype = FALSE) +
+  scale_x_continuous(
+    name = expression(theta),
+    limits = c(0, 1)
+  ) +
+  labs(
+    title = "Histogram of parameter samples",
+    caption = "The histogram of the samples is colored in grey."
+  )
 ```
 
+The sample histogram, which is colored in grey, perfectly coincides with the theoretical density.
+This is what we would expect with ten million samples. The same can be said of the sample mean
+and numerical mean. We can therefore conclude that the rejection sampling algorithm has been 
+correctly implemented.
 
-### 2. Posterior mean by Monte-Carlo integration
+The calculated posterior means are shown in the following table.
 
+```{r}
+means %>%
+  kable(
+    col.names = c("Posterior mean", "Method"),
+    caption = "Table 2: Posterior mean calculation comparison"
+  ) %>%
+  kable_styling()
+```
 
+These values are close enough to conclude that the implementation is correct.
 
 ### 3. Required iterations for one sample
 
-```{r}
-theta_tries / N
-```
+The overall acceptance rate for the rejection sampling algorithm is $c^{-1}$.
+We would therefore expect, on average, to generate $c$ samples before one is
+accepted. Since $\mathcal{U}(0, 1)$ is used as the proposal density, we can
+numerically calculate $c$ as
+
+$$
+c = \max_{\theta \in [0, 1]} f(\theta | \vec{y})
+$$
+
+We can compare this theoretical result with the numerical one, calculated earlier
 
 ```{r}
-cInverse = optimize(
+average_theta_tries <- theta_sampling_result$tries / M
+cNumeric = optimize(
   f = f_density,
   interval = c(0, 1),
   maximum = TRUE
 )$objective
-cInverse
+attempts <- tibble(
+  method = c("Sampling", "Theoretical"),
+  attempts = c(average_theta_tries, cNumeric)
+)
+attempts %>%
+  kable(
+    caption = "Table 3: Required proposals for each accepted sample"
+    col.names = c("Method", "Required proposals")
+  ) %>%
+  kable_styling()
 ```
+
+The acceptance rate is close to the theoretical optimal.
+We have now confirmed both the validity and optimality of the implemented
+algorithm within the bounds of the assigned problem.
 
 
 ### 4. New prior
