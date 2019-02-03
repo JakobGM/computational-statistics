@@ -88,6 +88,25 @@ $$
 =
 v^{k - 1}
 $$
+Inserting the expressions $z_k,\ k = 0,\ldots,K$ into $f_z(\vec{z}; \vec{\alpha})$ yields 
+
+$$
+f_z(\tilde{x}, v ; \vec{\alpha}) = \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}\frac{v^{\sum_{k=1}^{K}\alpha_k}}{v^K}e^{-v}
+$$
+Multiplying by this by the Jacobian leaves us with 
+
+$$
+f_z(\tilde{x}, v ; \vec{\alpha}) = \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}v^{\sum_{k=1}^{K}\alpha_k - 1}e^{-v}
+$$
+We recognize the two latter terms as the kernel of the gamma function, and by integrating out $v$ we obtain
+
+$$
+f(\tilde{x} ; \vec{\alpha}) = \int_0^{\infty}f_z(\tilde{x}, v ; \vec{\alpha}) dv \\
+= \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}\int_0^{\infty}v^{\sum_{k=1}^{K}\alpha_k - 1}e^{-v} dv \\
+= \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}\Gamma\left(\sum_{k=1}^{K}\alpha_k\right)
+$$
+This is the Dirichlet distribution, as we wanted to show.
+
 
 ### 2. Implementation
 

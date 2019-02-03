@@ -78,14 +78,14 @@ print(results)
 To find the values of $a$ and $b_{+}$ we take the of derivative of $f^{\star}(x)$ and $x^2f^{\star}(x)$and set it equal to zero. This gives us the values for which the two functions are maximized. By evaluating the functions at these points, $x = \sqrt{\alpha - 1}$ and $x = \sqrt{\alpha + 1}$ respectively, one obtains that
 $a = \sqrt{\left(\frac{\alpha - 1}{e}\right)^{\alpha - 1}}$ and $b_{+} = \sqrt{\left(\frac{\alpha + 1}{e}\right)^{\alpha + 1}}$. The function $f^{\star}(x)$ is zero for $x \leq 0$, so it's supremum is 0 in this region, giving us $b_{-} = 0$.
 
-Neither the values of $a$ and $b_{+}$ nor the function $f^{\star}(x)$ is easy to evaluate numerically for high values of $alpha$. This problem is solved by sampling directly from the distribution of $Y_1 = \log(X_1)$ and $Y_2 = \log(X_2)$, and proceeding by checking whether the values of $Y_1$ and $Y_2$ is such that $(X_1, X_2}$ falls within the region $C_f$.
+Neither the values of $a$ and $b_{+}$ nor the function $f^{\star}(x)$ is easy to evaluate numerically for high values of $\alpha$. This problem is solved by sampling directly from the distribution of $Y_1 = \log(X_1)$ and $Y_2 = \log(X_2)$, and proceeding by checking whether the values of $Y_1$ and $Y_2$ is such that $(X_1, X_2)$ falls within the region $C_f$. $X_1$ and $X_2$ are uniformly distributed on the intervals with $\left[0, \alpha\right]$ and $\left[b_-,b_+\right]$ respectively.
 
 The condition on a realization of $Y$ for checking whether $X$ is in $C_f$ becomes 
 
 $$
 y_1 = \log(x_1) \leq \frac{1}{2}\left[(\alpha - 1)(\log(x_2) - \log(x_1)) - e^{\log(x_2) - \log(x_1)}\right]
 $$
-To be able to sample from the distribution of $Y$ we need to find the inverse cumulative distribution function. The distribution function of $Y_1$ is given by $f_{Y_1}(x) = e^{x - \log(a)}\mathrm{1}_{\{x \leq \log(a)\}}$. The cumulative distribution is given by $F_{Y_1}(x) = e^{x - \log(a)}$. Setting $u = F_{Y_1}(x)$ yields $x = \log(u) + \log(a)$. In an equivalent fashion, we obtain $x = \log(u) + \log(b_{+})$ for sampling $Y_2$.
+To be able to sample from the distribution of $Y$ we need to find the inverse cumulative distribution function. The distribution function of $Y_1$ is given by $f_{Y_1}(x) = e^{x - \log(a)}\mathrm{1}_{\{x \leq \log(a)\}}$. The cumulative distribution is given by $F_{Y_1}(x) = e^{x - \log(a)}$. Setting $u = F_{Y_1}(x)$ yields $x = \log(u) + \log(a)$. In an equivalent fashion, we obtain $x = \log(u) + \log(b_{+})$ for sampling from the distribution of $Y_2$.
 
 ```{r}
 alpha <- 500
@@ -135,7 +135,7 @@ accepted_samples <- ratio_of_uniforms_f(n, alpha)$samples %>%
 accepted_samples %>%
   ggplot() +
   geom_histogram(aes(x=y, y=..density..), binwidth=0.2) +
-  stat_function(aes(x=y), fun = dgamma, args = list(shape = alpha, scale = 1))
+  stat_function(aes(x=y), fun = dgamma, args = list(shape = alpha, scale = 1), color='red')
 
 results <- list(mean=alpha,
                 sample_mean=mean(accepted_samples$y),
@@ -144,9 +144,7 @@ results <- list(mean=alpha,
 
 print(results)
 ```
-
-
-
+The plot above shows how the acceptance probability decreases as the value of $\alpha$ increases. This happens because the proportion of the total area $\left[0, a\right] \times \left[b_-, b_+\right]$ covered by $C_f$ shrinks as $\alpha$ increases. It can be seen from the plot that the proportion shrinks more rapidly when the value of $\alpha$ is still comparatively small, but tapers off as $\alpha$ approaches $\alpha = 2000$.
 
 
 
