@@ -14,6 +14,13 @@ for $x_1, ..., x_{K - 1} > 0$ and $\sum_{k = 1}^{K - 1} x_k < 1$.
 
 ### 1. Theory
 
+Define a new $K$-dimensional stochastic vector $\vec{z} := (z_1, ... z_K)$ where $z_k \sim \text{gamma}(\alpha_k, 1)$, where $z_k$ are independently distributed. We will now show that the transformation
+
+$$
+x_k = \frac{z_k}{\sum_{k=1}^{K} z_k}
+$$
+results in $\vec{x}$ being Dirichlet distributed with parameter vector $\vec{\alpha}$.
+
 ### 2. Implementation
 
 (Answer)
