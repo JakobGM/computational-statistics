@@ -21,6 +21,16 @@ x_k = \frac{z_k}{\sum_{k=1}^{K} z_k}
 $$
 results in $\vec{x}$ being Dirichlet distributed with parameter vector $\vec{\alpha}$.
 
+Since the $z_k$'s are identically and idependently distributed, the joint distribution can be found by
+
+$$
+\begin{align}
+  f_{z_k}(z_k; \alpha_k) &= \frac{z_k^{\alpha_k - 1} e^{-z_k}}{\Gamma(\alpha_k)} \\
+  \implies f_z(\vec{z}; \vec{\alpha}) &= \prod_{k = 1}^{K} f_{z_k}(z_k; \alpha_k)
+  = \prod_{k = 1}^{K} \left( \frac{z_k^{\alpha_k - 1}}{\Gamma(\alpha_k)} \right) e^{-\vec{1} \cdot z}
+\end{align}
+$$
+
 ### 2. Implementation
 
 (Answer)
