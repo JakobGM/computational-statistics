@@ -1,10 +1,18 @@
 ## Problem C: The Dirichlet distribution: simulating using known relations
 
+Define the $K$ dimensional stochastic vector $\vec{x} := (x_1, ..., x_K)$ where $x_k \in [0, 1]$ and $\sum_{x = 1}^{K} x_k = 1$.
+Since $x_K$ is determined by $(x_1, ..., x_{K - 1})$, define $\tilde{x} := (x_1, ..., x_{K - 1})$.
+Also, define the the parameter vector $\vec{\alpha} = (\alpha_1, ..., \alpha_K).
+
+The vector $\vec{x}$ is said to have a Dirichlet distribution with parameter $\vec{\alpha}$ when the probability density for $\tilde{x}$ is given by
+
+$$
+f(\tilde{x}; \vec{\alpha}) = \frac{\Gamma(\sum_{k = 1}^{K} \alpha_k)}{\prod_{k = 1}^{K}{\alpha_k}} \cdot \bigg( \prod_{k = 1}^{K - 1}{x_k^{\alpha_k - 1}} \bigg) \cdot \bigg(1 - \sum_{k = 1}^{K - 1} x_k \bigg)^{\alpha_K - 1}
+$$
+
+for $x_1, ..., x_{K - 1} > 0$ and $\sum_{k = 1}^{K - 1} x_k < 1$.
 
 ### 1. Theory
-
-(Answer)
-
 
 ### 2. Implementation
 
