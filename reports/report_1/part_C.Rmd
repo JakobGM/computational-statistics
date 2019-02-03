@@ -32,12 +32,16 @@ $$
 \end{align}
 $$
 
-Now, perform a transformation of the variable $\vec{z}$ to $(x_1, ..., x_{K - 1}, v)$, with $v$ as defined above. This yields
+Now, perform a transformation, $h$, of the variable $\vec{z}$ to $(x_1, ..., x_{K - 1}, v)$, with $v$ as defined above. This yields
 
 $$
 \begin{align}
   x_k &= \frac{z_k}{v} \\
-  \implies z_k &= v x_k \\
+  \implies z_k &=
+  \begin{cases}
+    h_k(x_k, v) = v \cdot x_k &, k \in {1,~...,~K - 1} \\
+    h_K(\tilde{x}, v) = v \cdot (1 - \sum_{k = 1}^{K - 1} x_k), &, k = K
+  \end{cases} \\
   \implies \vec{z} &= v \vec{x}
   = \left(v \cdot x_1,~...,~v \cdot x_{K - 1}, v \cdot \left[1 - \sum_{k = 1}^{K - 1} x_k\right]\right).
 \end{align}
