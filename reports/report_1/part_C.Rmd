@@ -39,7 +39,7 @@ $$
   x_k &= \frac{z_k}{v} \\
   \implies z_k &=
   \begin{cases}
-    h_k(x_k, v) = v \cdot x_k &, k \in {1,~...,~K - 1} \\
+    h_k(x_k, v) = v \cdot x_k &, k \in \left{1,~...,~K - 1\right} \\
     h_K(\tilde{x}, v) = v \cdot (1 - \sum_{k = 1}^{K - 1} x_k), &, k = K
   \end{cases} \\
   \implies \vec{z} &= v \vec{x}
@@ -61,6 +61,39 @@ $$
 
 for row $j$ and column $k$.
 
+(Derive form of J)
+
+This Jacobian matrix can be reduced to upper triangular form by $K - 1$ row additions
+without changing its determinant.
+The determinant of an upper triangular matrix is the product of its diagonal entries, which results in
+
+$$
+\det
+\begin{bmatrix}
+  v  & 0  & \dots  & 0  & x_1 \\
+  0  & v  & \dots  & 0  & x_2 \\
+  \vdots  & \vdots  & \ddots  & \vdots  & \vdots \\
+  0  & 0  & \dots  & v  & x_{K - 1} \\
+  -v  & -v  & \dots  & -v  & 1 - \sum_{k = 1}^{K - 1} x_k
+\end{bmatrix}
+= 
+\det
+\begin{bmatrix}
+  v  & 0  & \dots  & 0  & x_1 \\
+  0  & v  & \dots  & 0  & x_2 \\
+  \vdots  & \vdots  & \ddots  & \vdots  & \vdots \\
+  0  & 0  & \dots  & v  & x_{K - 1} \\
+  0  & 0  & \dots  & 0  & 1
+\end{bmatrix}
+=
+v^{k - 1}
+$$
+
 ### 2. Implementation
 
-(Answer)
+```{r}
+rdirichlet <- function(n, alpha) {
+  gammaSamples <- random_sample_from_f(n = n, alpha = alpha, beta = 1)
+  return(1)
+}
+```
