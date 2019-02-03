@@ -27,9 +27,35 @@ $$
 \begin{align}
   f_{z_k}(z_k; \alpha_k) &= \frac{z_k^{\alpha_k - 1} e^{-z_k}}{\Gamma(\alpha_k)} \\
   \implies f_z(\vec{z}; \vec{\alpha}) &= \prod_{k = 1}^{K} f_{z_k}(z_k; \alpha_k)
-  = \prod_{k = 1}^{K} \left( \frac{z_k^{\alpha_k - 1}}{\Gamma(\alpha_k)} \right) e^{-\vec{1} \cdot z}
+  = \prod_{k = 1}^{K} \left( \frac{z_k^{\alpha_k - 1}}{\Gamma(\alpha_k)} \right) e^{-v} \\
+  v :&= \sum_{k = 1}^{K} z_k.
 \end{align}
 $$
+
+Now, perform a transformation of the variable $\vec{z}$ to $(x_1, ..., x_{K - 1}, v)$, with $v$ as defined above. This yields
+
+$$
+\begin{align}
+  x_k &= \frac{z_k}{v} \\
+  \implies z_k &= v x_k \\
+  \implies \vec{z} &= v \vec{x}
+  = \left(v \cdot x_1,~...,~v \cdot x_{K - 1}, v \cdot \left[1 - \sum_{k = 1}^{K - 1} x_k\right]\right).
+\end{align}
+$$
+
+The change-of-variables formula gives the new joint distribution as
+
+$$
+f_x(\tilde{x}, v; \vec{\alpha}) = f_z(\vec{z}; \vec{\alpha}) \cdot |J|,
+$$
+
+where $|J|$ is the determinant of the Jacobian. It is defined by
+
+$$
+J_{j, k} = \frac{\text{d}z_k}{\text{d}x_j},
+$$
+
+for row $j$ and column $k$.
 
 ### 2. Implementation
 
