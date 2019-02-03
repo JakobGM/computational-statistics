@@ -46,3 +46,5 @@ packrat/src/
 **/*_files
 reports/report_1/base_cache/
 reports/report_1/part_D_cache/
+reports/**/*.log
+reports/**/*.tex
