@@ -493,7 +493,7 @@ The distribution under the new prior is also shifted to the left, as previously 
 The sampling mean converges towards the theoretical mean. The rate of convergence is visualized in the following plot.
 
 ```{r}
-# Take the first 10 thousand iterations with stepsize = 10
+# Take the first 10 thousand iterations with step size = 10
 row_seq <- seq(10, 10000, 10)
 
 # Subset the first k samples of theta under the uniform prior
@@ -548,5 +548,5 @@ meanProgression %>%
   )
 ```
 
-In both cases, it seems to be enough with ~5k samples in order to calculate a relatively accurate
+In both cases, it seems to be enough with approximately 5 thousand samples in order to calculate a relatively accurate
 posterior mean for the $\theta$ parameter.

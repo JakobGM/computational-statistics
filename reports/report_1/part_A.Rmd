@@ -75,7 +75,7 @@ $$
 
 #### (a) Cumulative distribution
 
-The cummulative distribution can now be found
+The cumulative distribution can now be found
 
 $$
 G(x)
