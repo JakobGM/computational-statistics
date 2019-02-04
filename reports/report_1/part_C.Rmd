@@ -63,11 +63,21 @@ $$
 J_{j, k} = \frac{\text{d}z_k}{\text{d}x_j},
 $$
 
-for row $j$ and column $k$.
+for row $j$ and column $k$. For brevity's sake we've defined $x_K := v$ in order to make the above expression hold for all $j, k$.
 
-(Derive form of J)
+The elements of the Jacobian can be found by calculating $\frac{dh_k}{dx_j}$ in four distinct cases.
 
-This Jacobian matrix can be reduced to upper triangular form by $K - 1$ row additions
+$$
+\frac{dh_k}{dx_j} = \frac{d}{dx_j} vx_j = \begin{cases} v,\ k = j \\ 0,\ k \neq j\end{cases}, k, j \in \{1,\ldots, K - 1\} \\
+
+\frac{dh_K}{dx_j} = \frac{d}{dx_j}v\left(1 - \sum_{k=1}^{K-1}x_k\right) =-v,\ j \in \{1,\ldots, K - 1\} \\
+
+\frac{dh_k}{dv} =  \frac{d}{dv} vx_k = x_k,\ k \in \{1,\ldots, K - 1\} \\
+
+\frac{dh_K}{dv} =  \frac{d}{dv}v\left(1 - \sum_{k=1}^{K-1}x_k\right) = 1 - \sum_{k=1}^{K-1}x_k
+$$
+
+The Jacobian matrix can be reduced to upper triangular form by $K - 1$ row additions
 without changing its determinant.
 The determinant of an upper triangular matrix is the product of its diagonal entries, which results in
 
