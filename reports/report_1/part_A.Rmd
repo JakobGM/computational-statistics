@@ -65,11 +65,10 @@ $$
 Inserting $c$ into the density function yields
 
 $$
-\newcommand{c}[0]{\frac{\alpha e}{\alpha + e}}
 g(x) =
 \begin{cases}
-  \c x^{\alpha - 1}, & 0 < x < 1, \\
-  \c e^{-x}, & 1 \leq x, \\
+  \frac{\alpha e}{\alpha + e} x^{\alpha - 1}, & 0 < x < 1, \\
+  \frac{\alpha e}{\alpha + e} e^{-x}, & 1 \leq x, \\
   0, & \text{otherwise.}
 \end{cases}
 $$
@@ -84,7 +83,7 @@ G(x)
 = \begin{cases}
   0, & x \leq 0 \\
   \frac{e}{\alpha + e} x^{\alpha}, & 0 < x < 1, \\
-  1 - \c e^{-x}, & 1 \leq x.
+  1 - \frac{\alpha e}{\alpha + e} e^{-x}, & 1 \leq x.
 \end{cases}
 $$
 Now we find the inverse of the cumulative distribution function. First for the case when $G(x) < \frac{e}{\alpha + e}$
