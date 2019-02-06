@@ -167,10 +167,17 @@ random_sample_from_f <- function(n, alpha, beta){
   return(result/beta)
 }
 
-random_sample_from_f(1000000, alpha, beta) %>%
+sample <- random_sample_from_f(1000000, alpha, beta)
+sample %>%
   enframe() %>%
   ggplot() +
   geom_histogram(aes(x=value, y=..density..), binwidth=0.05) +
   stat_function(fun = partial(dgamma, shape=alpha, rate=beta), color='red', size=1)
+
+results <- list(mean = alpha/beta,
+                sample_mean = mean(sample),
+                variance = alpha/beta^2,
+                sample_variance = var(sample))
+print(results)
 ```
 

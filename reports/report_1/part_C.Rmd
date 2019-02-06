@@ -6,7 +6,7 @@ library(kableExtra)
 
 Define the $K$ dimensional stochastic vector $\vec{x} := (x_1, ..., x_K)$ where $x_k \in [0, 1]$ and $\sum_{x = 1}^{K} x_k = 1$.
 Since $x_K$ is determined by $(x_1, ..., x_{K - 1})$, define $\tilde{x} := (x_1, ..., x_{K - 1})$.
-Also, define the the parameter vector $\vec{\alpha} = (\alpha_1, ..., \alpha_K).
+Also, define the the parameter vector $\vec{\alpha} = (\alpha_1, ..., \alpha_K)$.
 
 The vector $\vec{x}$ is said to have a Dirichlet distribution with parameter $\vec{\alpha}$ when the probability density for $\tilde{x}$ is given by
 
@@ -28,27 +28,21 @@ results in $\vec{x}$ being Dirichlet distributed with parameter vector $\vec{\al
 Since the $z_k$'s are identically and independently distributed, the joint distribution can be found by
 
 $$
-\begin{align}
-  f_{z_k}(z_k; \alpha_k) &= \frac{z_k^{\alpha_k - 1} e^{-z_k}}{\Gamma(\alpha_k)} \\
-  \implies f_z(\vec{z}; \vec{\alpha}) &= \prod_{k = 1}^{K} f_{z_k}(z_k; \alpha_k)
-  = \prod_{k = 1}^{K} \left( \frac{z_k^{\alpha_k - 1}}{\Gamma(\alpha_k)} \right) e^{-v} \\
-  v :&= \sum_{k = 1}^{K} z_k.
-\end{align}
+  f_{z_k}(z_k; \alpha_k) = \frac{z_k^{\alpha_k - 1} e^{-z_k}}{\Gamma(\alpha_k)}
+  \implies f_z(\vec{z}; \vec{\alpha}) = \prod_{k = 1}^{K} f_{z_k}(z_k; \alpha_k)
+  = \prod_{k = 1}^{K} \left( \frac{z_k^{\alpha_k - 1}}{\Gamma(\alpha_k)} \right) e^{-v}
+$$
+$$
+  v := \sum_{k = 1}^{K} z_k.
 $$
 
 Now, perform a transformation, $h$, of the variable $\vec{z}$ to $(x_1, ..., x_{K - 1}, v)$, with $v$ as defined above. This yields
 
 $$
-\begin{align}
-  x_k &= \frac{z_k}{v} \\
-  \implies z_k &=
-  \begin{cases}
-    h_k(x_k, v) = v \cdot x_k &, k \in \left{1,~...,~K - 1\right} \\
-    h_K(\tilde{x}, v) = v \cdot (1 - \sum_{k = 1}^{K - 1} x_k), &, k = K
-  \end{cases} \\
-  \implies \vec{z} &= v \vec{x}
-  = \left(v \cdot x_1,~...,~v \cdot x_{K - 1}, v \cdot \left[1 - \sum_{k = 1}^{K - 1} x_k\right]\right).
-\end{align}
+z_k = h_k(x_k, v) = vx_k,\ k \in \{0\ldots,K-1\}
+$$
+$$
+z_K = h_K(\tilde{x}, v) = v(1 - \sum_{k = 1}^{K - 1} x_k)
 $$
 
 The change-of-variables formula gives the new joint distribution as
@@ -68,12 +62,15 @@ for row $j$ and column $k$. For brevity's sake we've defined $x_K := v$ in order
 The elements of the Jacobian can be found by calculating $\frac{dh_k}{dx_j}$ in four distinct cases.
 
 $$
-\frac{dh_k}{dx_j} = \frac{d}{dx_j} vx_j = \begin{cases} v,\ k = j \\ 0,\ k \neq j\end{cases}, k, j \in \{1,\ldots, K - 1\} \\
-
+\frac{dh_k}{dx_j} = \frac{dvx_j}{dx_j} = \begin{cases} v,\ k = j \\ 0,\ k \neq j\end{cases},\ k,\ j \in \{1,\ldots, K - 1\} \\
+$$
+$$
 \frac{dh_K}{dx_j} = \frac{d}{dx_j}v\left(1 - \sum_{k=1}^{K-1}x_k\right) =-v,\ j \in \{1,\ldots, K - 1\} \\
-
+$$
+$$
 \frac{dh_k}{dv} =  \frac{d}{dv} vx_k = x_k,\ k \in \{1,\ldots, K - 1\} \\
-
+$$
+$$
 \frac{dh_K}{dv} =  \frac{d}{dv}v\left(1 - \sum_{k=1}^{K-1}x_k\right) = 1 - \sum_{k=1}^{K-1}x_k
 $$
 
@@ -116,8 +113,10 @@ We recognize the two latter terms as the kernel of the gamma function, and by in
 
 $$
 f(\tilde{x} ; \vec{\alpha}) = \int_0^{\infty}f_z(\tilde{x}, v ; \vec{\alpha}) dv \\
-= \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}\int_0^{\infty}v^{\sum_{k=1}^{K}\alpha_k - 1}e^{-v} dv \\
-= \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}\Gamma\left(\sum_{k=1}^{K}\alpha_k\right)
+= \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}\int_0^{\infty}v^{\sum_{k=1}^{K}\alpha_k - 1}e^{-v} dv
+$$
+$$
+\implies f(\tilde{x} ; \vec{\alpha}) = \frac{\prod_{k=1}^{K-1}x_k^{\alpha_k - 1}}{\prod_{k=1}^K \Gamma(\alpha_k)}\left(1 - \sum_{k=1}^{K-1}x_k\right)^{\alpha_K - 1}\Gamma\left(\sum_{k=1}^{K}\alpha_k\right)
 $$
 This is the Dirichlet distribution, as we wanted to show.
 
@@ -168,11 +167,9 @@ In order to validate the algorithm, we will draw 10 million samples with $\vec{\
 The sample mean and variance can be compared to the theoretical mean and variance, which are given without proof
 
 $$
-\begin{align}
-  \text{E}[X_k] &= \frac{\alpha_k}{\alpha_0} \\
-  \text{Var}(X_k) &= \frac{\alpha_k (\alpha_0 - \alpha_k)}{\alpha_0^2 (\alpha_0 + 1)} \\
-  \alpha_0 :&= \sum_{k = 1}^K \alpha_k
-\end{align}
+  \text{E}[X_k] = \frac{\alpha_k}{\alpha_0} \\
+  \text{Var}(X_k) = \frac{\alpha_k (\alpha_0 - \alpha_k)}{\alpha_0^2 (\alpha_0 + 1)} \\
+  \alpha_0 := \sum_{k = 1}^K \alpha_k
 $$
 
 ```{r}

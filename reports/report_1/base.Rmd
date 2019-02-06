@@ -1,17 +1,21 @@
 ---
 title: "Exercise 1"
-author: "Øyvind Klåpbakken, Jakob Gerhard Martinussen, Zhengyu Shan"
+author: 
+- "Øyvind Klåpbakken"
+- "Jakob Gerhard Martinussen"
 date: "January 18, 2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 references:
-- id: Roa
-  title: Linear Statistical Inference and its Applications
-  DOI: 10.1002/9780470316436
+- DOI: 10.1002/9780470316436
   author:
   - family: Rao
     given: C. Radhakrishna
+  id: Roa
   issued:
     year: 1973
+  title: Linear Statistical Inference and its Applications
 ---
 
 ```{r setup, include=FALSE}

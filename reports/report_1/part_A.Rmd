@@ -1,9 +1,14 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ## Problem A: Stochastic simulation by the probability integral transform and bivariate techniques
 
 
 ### 1. Sampling from the exponential distribution
 
-We want to generate $n$ samples the exponential distribution with rate parameter $\lambda$.
+We want to generate $n$ samples from the exponential distribution with rate parameter $\lambda$.
 
 ```{r}
 library(tidyverse)
@@ -20,14 +25,14 @@ rexp <- function(n, rate = 1) {
 ```
 
 ```{r}
-samples <- 10000
+samples <- 1000000
 rate <- 1
 exponential_samples <- rexp(n = samples, rate = rate)
 ggplot() + 
   geom_histogram(
     data = exponential_samples,
     mapping = aes(x=value, y=..density..),
-    binwidth = 0.1,
+    binwidth = 0.01,
     boundary = 0
   ) +
   geom_vline(
@@ -38,6 +43,12 @@ ggplot() +
     args=list(rate = rate),
     aes(col='Theoretical density')
   )
+
+results <- list(mean=1/rate,
+                sample_mean = mean(exponential_samples$value),
+                variance = 1/rate^2,
+                sample_variance = var(exponential_samples$value))
+print(results)
 ```
 
 
@@ -89,18 +100,14 @@ $$
 Now we find the inverse of the cumulative distribution function. First for the case when $G(x) < \frac{e}{\alpha + e}$
 
 $$
-\begin{align}
-  G(x) &= \frac{e}{\alpha + e} x^{\alpha} \\
-  \implies x &= \sqrt[\alpha]{\frac{\alpha + e}{e} G(x)}
-\end{align}
+  G(x) = \frac{e}{\alpha + e} x^{\alpha} \\
+  \implies x = \sqrt[\alpha]{\frac{\alpha + e}{e} G(x)}
 $$
 And for $G(x) > \frac{e}{\alpha + e}$ we have
 
 $$
-\begin{align}
-  G(x) &= 1 - \frac{\alpha e}{\alpha + e}e^{-x} \\
-  \implies x &= - \ln\left(\frac{\alpha + e}{\alpha e}(1 - G(x))\right)
-\end{align}
+  G(x) = 1 - \frac{\alpha e}{\alpha + e}e^{-x} \\
+  \implies x = - \ln\left(\frac{\alpha + e}{\alpha e}(1 - G(x))\right)
 $$
 The inverse cumulative function thus becomes
 

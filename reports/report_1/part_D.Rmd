@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ## Problem D: Rejection sampling and importance sampling
 
 We now consider a specific recombination rate in genetics given by the data of Rao, C. R. [-@Roa].
@@ -18,8 +23,7 @@ data %>%
   kable(
     col.names = c("Cell count", "Probability"),
     caption = "Table 1: Genetic linkage data"
-  ) %>%
-  kable_styling()
+  )
 ```
 
 The multinomial mass function is given, proportionally, by
@@ -31,11 +35,9 @@ $$
 Using Beta(1, 1) as a prior for $\theta$, i.e. a uniform prior, yields the following posterior density
 
 $$
-\begin{align}
-  f(\theta | \vec{y}) =& d \cdot h(\theta | \vec{y})& \\
-  h(\theta) :=& (2 + \theta)^{y_1} (1-\theta)^{y_2 + y_3} \theta^{y_4}& \\
-  d :=& \int_0^1 h(\theta | \vec{y}) \text{d}\theta > 0
-\end{align}
+  f(\theta | \vec{y}) = d \cdot h(\theta | \vec{y}) \\
+  h(\theta) := (2 + \theta)^{y_1} (1-\theta)^{y_2 + y_3} \theta^{y_4} \\
+  d := \int_0^1 h(\theta | \vec{y}) \text{d}\theta > 0
 $$
 
 Here we have introduced the unknown normalizing constant $d$ for $h(\theta | \vec{y})$.
@@ -267,8 +269,7 @@ means %>%
   kable(
     col.names = c("Posterior mean", "Method"),
     caption = "Table 2: Posterior mean calculation comparison"
-  ) %>%
-  kable_styling()
+  )
 ```
 
 These values are close enough to conclude that the implementation is correct.
@@ -301,8 +302,7 @@ attempts %>%
   kable(
     caption = "Table 3: Required proposals for each accepted sample",
     col.names = c("Method", "Required proposals")
-  ) %>%
-  kable_styling()
+  )
 ```
 
 The acceptance rate is close to the theoretical optimal.
