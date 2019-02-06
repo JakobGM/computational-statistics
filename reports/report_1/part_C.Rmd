@@ -200,9 +200,9 @@ comparison %>%
       "Theoretical mean",
       "Sample variance",
       "Theoretical variance"
-    )
-  ) %>%
-  kable_styling()
+    ),
+    escape = FALSE
+  )
 ```
 
 Both the sample mean and variance is well within acceptable bounds from the theoretical values. We therefore conclude that the implementation is correct.

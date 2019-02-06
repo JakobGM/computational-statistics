@@ -22,7 +22,8 @@ data <- tibble(
 data %>%
   kable(
     col.names = c("Cell count", "Probability"),
-    caption = "Table 1: Genetic linkage data"
+    caption = "Table 1: Genetic linkage data", 
+    escape = FALSE
   )
 ```
 
