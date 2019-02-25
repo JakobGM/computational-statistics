@@ -1,3 +1,84 @@
 # Exercise 2 - Implementation of the MCMC sampler
 
-(answer)
+```{r}
+# For sparse matrix support
+library(spam)
+str(Oral)
+attach(Oral)
+library(fields, warn.conflict=FALSE)
+library(colorspace)
+col <- diverge_hcl(8)
+germany.plot(Oral$Y / Oral$E, col=col, legend=TRUE)
+```
+
+Define the matrix $R$.
+
+```{r}
+load("data/tma4300_ex2_Rmatrix.Rdata")
+```
+
+Global state for the problem
+Setting hypeparams, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
+
+```{r}
+attach(Oral)
+problem = list(
+  y = Oral$Y,
+  E = Oral$E,
+  n = length(Oral$Y),
+  alpha_u = 1,
+  alpha_v = 1,
+  beta_u = 0.01,
+  beta_v = 0.01,
+  R = R
+)
+```
+
+Implementing full conditional sampler for $\kappa_u$ and $\kappa_v$.
+
+```{r}
+draw_kappa_u <- function(u) {
+  shape <- (problem$n - 1) / 2 + problem$alpha_u
+  rate <- 0.5 * t(u) %*% problem$R %*% u + problem$beta_u
+  sample <- rgamma(shape = shape, rate = rate, n = 1)
+  return(sample)
+}
+```
+
+```{r}
+draw_kappa_v <- function(eta, u) {
+  shape <- problem$n / 2 + problem$alpha_v
+  rate <- 0.5 * t(eta - u) %*% (eta - u) + problem$beta_v
+  sample <- rgamma(shape = shape, rate = rate, n = 1)
+  return(sample)
+}
+```
+
+Draw full conditional $\vec{u}$
+
+```{r}
+draw_u <- function(kappa_v, eta) {
+  solved <- solve(diag.spam(x = kappa_v, nrow = problem$n) + kappa_u * R)
+  b <- kappa_v * solved %*% eta
+  Q <- solved
+  sample <- rmvnorm.canonical(n = 1, b = b, Q = Q)
+  return(sample)
+}
+```
+
+Draw full conditional $\vec{\eta}$
+
+```{r}
+draw_eta <- function(z, u, kappa_v) {
+  b <- problem$y - problem$E * exp(z) * (z - 1)
+  c <- problem$E * exp(z)
+  
+  mean <- kappa_v * u + b
+  Q <- diag.spam(x = kappa_v, nrow = problem$n) + diag.spam(c)
+  
+  rmvnorm.canonical(n = 1, b = mean, Q = Q)
+}
+```
+
+
+
