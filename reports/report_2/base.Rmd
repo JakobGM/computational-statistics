@@ -1,0 +1,39 @@
+---
+title: "TMA4300: Exercise 2"
+author: 
+- "Øyvind Klåpbakken"
+- "Jakob Gerhard Martinussen"
+date: "Spring 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Automatically apply code formatter for code blocks
+library(formatR)
+library(knitr)
+library(docstring)
+showsol <- FALSE
+opts_chunk$set(tidy.opts = list(width.cutoff = 68), tidy = FALSE, warning = FALSE, error = FALSE, message = FALSE, echo = TRUE, cache = TRUE)
+```
+
+```{r child = 'exercise_1.Rmd'}
+```
+\newpage
+```{r child = 'exercise_2.Rmd'}
+```
+\newpage
+```{r child = 'exercise_3.Rmd'}
+```
+\newpage
+```{r child = 'exercise_4.Rmd'}
+```
+\newpage
+```{r child = 'exercise_5.Rmd'}
+```
+\newpage
+```{r child = 'exercise_6.Rmd'}
+```

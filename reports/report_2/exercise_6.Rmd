@@ -1,0 +1,9 @@
+# Exercise 6 - Comparison to `INLA` and inclusion of covariate information
+
+## a) Implementation in `R-INLA`
+
+(answer)
+
+## b) Smoking as new covariate
+
+(answer)

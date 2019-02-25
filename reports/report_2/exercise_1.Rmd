@@ -1,0 +1,13 @@
+# Exercise 1 - Derivations
+
+## a) Derivation of the posterior distribution
+
+(answer)
+
+## b) Simplification of the posterior
+
+(answer)
+
+## c) Derivation of full conditionals
+
+(answer)
