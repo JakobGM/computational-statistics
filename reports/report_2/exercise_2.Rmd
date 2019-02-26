@@ -68,7 +68,7 @@ Implementing full conditional sampler for $\kappa_u$ and $\kappa_v$.
 draw_kappa_u <- function(u) {
   shape <- (problem$n - 1) / 2 + problem$alpha_u
   rate <- 0.5 * t(u) %*% problem$R %*% u + problem$beta_u
-  sample <- rgamma(shape = shape, rate = rate, n = 1)
+  sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
   return(sample)
 }
 ```
@@ -77,7 +77,7 @@ draw_kappa_u <- function(u) {
 draw_kappa_v <- function(eta, u) {
   shape <- problem$n / 2 + problem$alpha_v
   rate <- 0.5 * t(eta - u) %*% (eta - u) + problem$beta_v
-  sample <- rgamma(shape = shape, rate = rate, n = 1)
+  sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
   return(sample)
 }
 ```
@@ -88,11 +88,10 @@ Draw full conditional $\vec{u}$
 
 ```{r}
 draw_u <- function(kappa_v, kappa_u, eta) {
-  solved <- solve(diag.spam(x = kappa_v, nrow = problem$n) + kappa_u * R)
-  b <- kappa_v * solved %*% eta
-  Q <- solved
-  sample <- rmvnorm.canonical(n = 1, b = b, Q = Q)
-  return(c(sample))
+  Q <- diag.spam(x = kappa_v, nrow = problem$n) + kappa_u * problem$R
+  b <- kappa_v * eta
+  sample <- c(rmvnorm.canonical(n = 1, b = b, Q = Q))
+  return(sample)
 }
 ```
 
@@ -103,14 +102,14 @@ Draw full conditional $\vec{\eta}$
 ```{r}
 source("data/dmvnorm.R")
 draw_proposal_eta <- function(z, u, kappa_v) {
-  b <- problem$y - problem$E * exp(z) * (z - 1)
+  b <- problem$y + problem$E * exp(z) * (z - 1)
   c <- problem$E * exp(z)
   
-  mean <- kappa_v * u + b
+  canonical_b <- kappa_v * u + b
   Q <- diag.spam(x = kappa_v, nrow = problem$n) + diag.spam(c)
   
-  sample <- c(rmvnorm.canonical(n = 1, b = mean, Q = Q))
-  logprob <- dmvnorm.canonical(x = sample, b = mean, Q = Q, log = TRUE)[[1]]
+  sample <- c(rmvnorm.canonical(n = 1, b = canonical_b, Q = Q))
+  logprob <- dmvnorm.canonical(x = sample, b = canonical_b, Q = Q, log = TRUE)[[1]]
   return(list(sample = sample, logprob = logprob))
 }
 ```
@@ -120,8 +119,15 @@ Acceptance probability
 ```{r}
 
 eta_log_density <- function(eta, kappa_v, u) {
-  return(-0.5 * t(eta) %*% diag.spam(x = kappa_v, nrow = problem$n) %*% eta + t(eta) %*% (kappa_v * u) + t(eta) %*% problem$y - t(exp(eta)) %*% problem$E)
+  #' Proportional full conditional density for eta
+  return(
+    -0.5 * t(eta) %*% diag.spam(x = kappa_v, nrow = problem$n) %*% eta
+    + t(eta) %*% (kappa_v * u)
+    + t(eta) %*% problem$y
+    - t(exp(eta)) %*% problem$E
+  )
 }
+
 acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u) {
   log_p_forward <- eta_log_density(eta = proposal_eta$sample, kappa_v = kappa_v, u = u)
   log_p_backward <- eta_log_density(eta = previous_eta$sample, kappa_v = kappa_v, u = u)
@@ -145,9 +151,9 @@ Implement MCMC
 ```{r}
 # Initial guess for parameters
 u <- c(rep_len(0.0, problem$n))
-eta <- list(sample = c(rep_len(1.0, problem$n)), logprob = 1)
+eta <- list(sample = c(rep_len(0.0, problem$n)), logprob = Inf)
 
-while (FALSE) {
+for (i in seq(1, 50)) {
   kappa_u <- draw_kappa_u(u = u)
   kappa_v <- draw_kappa_v(eta = eta$sample, u = u)
   u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample)
@@ -157,6 +163,5 @@ while (FALSE) {
   if (runif(1)[1] < alpha) {
     eta = proposal_eta
   }
-  print(kappa_u)
 }
 ```
