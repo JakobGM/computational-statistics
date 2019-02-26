@@ -44,7 +44,7 @@ load("data/tma4300_ex2_Rmatrix.Rdata")
 
 We will now define a list named \texttt{problem}, which will contain our global state for our problem.
 It will contain constants for our problem, such as $\yvec$, $\Evec$, $n$, $\Rmat$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
-These variables will remain constants through all the iterations of the MCMC algorithm, and will therefore be ommited from all function signatures in order to make the code more readable.
+These variables will remain constants through all the iterations of the MCMC algorithm.
 
 ```{r}
 problem = list(
@@ -66,7 +66,7 @@ problem = list(
 Implementing full conditional sampler for $\kappa_u$ and $\kappa_v$.
 
 ```{r}
-draw_kappa_u <- function(u) {
+draw_kappa_u <- function(u, problem) {
   shape <- (problem$n - 1) / 2 + problem$alpha_u
   rate <- 0.5 * t(u) %*% problem$R %*% u + problem$beta_u
   sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
@@ -75,7 +75,7 @@ draw_kappa_u <- function(u) {
 ```
 
 ```{r}
-draw_kappa_v <- function(eta, u) {
+draw_kappa_v <- function(eta, u, problem) {
   shape <- problem$n / 2 + problem$alpha_v
   rate <- 0.5 * t(eta - u) %*% (eta - u) + problem$beta_v
   sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
@@ -88,7 +88,7 @@ draw_kappa_v <- function(eta, u) {
 Draw full conditional $\vec{u}$
 
 ```{r}
-draw_u <- function(kappa_v, kappa_u, eta) {
+draw_u <- function(kappa_v, kappa_u, eta, problem) {
   Q <- diag.spam(x = kappa_v, nrow = problem$n) + kappa_u * problem$R
   b <- kappa_v * eta
   sample <- c(rmvnorm.canonical(n = 1, b = b, Q = Q))
@@ -102,7 +102,7 @@ Draw full conditional $\vec{\eta}$
 
 ```{r}
 source("data/dmvnorm.R")
-draw_proposal_eta <- function(z, u, kappa_v) {
+draw_proposal_eta <- function(z, u, kappa_v, problem) {
   b <- problem$y + problem$E * exp(z) * (z - 1)
   c <- problem$E * exp(z)
   
@@ -119,7 +119,7 @@ Acceptance probability
 
 ```{r}
 
-eta_log_density <- function(eta, kappa_v, u) {
+eta_log_density <- function(eta, kappa_v, u, problem) {
   #' Proportional full conditional density for eta
   return(
     -0.5 * t(eta) %*% diag.spam(x = kappa_v, nrow = problem$n) %*% eta
@@ -129,9 +129,19 @@ eta_log_density <- function(eta, kappa_v, u) {
   )
 }
 
-acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u) {
-  log_p_forward <- eta_log_density(eta = proposal_eta$sample, kappa_v = kappa_v, u = u)
-  log_p_backward <- eta_log_density(eta = previous_eta$sample, kappa_v = kappa_v, u = u)
+acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, problem) {
+  log_p_forward <- eta_log_density(
+          eta = proposal_eta$sample,
+          kappa_v = kappa_v,
+          u = u,
+          problem = problem
+  )
+  log_p_backward <- eta_log_density(
+          eta = previous_eta$sample,
+          kappa_v = kappa_v,
+          u = u,
+          problem = problem
+  )
   
   log_q_forward <- proposal_eta$logprob
   log_q_backward <- previous_eta$logprob
@@ -154,7 +164,7 @@ steps <- 5000
 
 # Initial guess for parameters u and eta
 u <- c(rep_len(0.0, problem$n))
-eta <- draw_proposal_eta(z = u, u = u, kappa_v = 0.0001)
+eta <- draw_proposal_eta(z = u, u = u, kappa_v = 0.0001, problem = problem)
 
 # Data structures for saving sample results
 kappa_us <- vector()
@@ -163,16 +173,22 @@ etas <- matrix(data = NA, nrow = steps, ncol = problem$n)
 us <- matrix(data = NA, nrow = steps, ncol = problem$n)
 
 for (i in seq(1, steps)) {
-  kappa_u <- draw_kappa_u(u = u)
-  kappa_v <- draw_kappa_v(eta = eta$sample, u = u)
-  u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample)
+  kappa_u <- draw_kappa_u(u = u, problem = problem)
+  kappa_v <- draw_kappa_v(eta = eta$sample, u = u, problem = problem)
+  u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample, problem = problem)
   
-  proposal_eta <- draw_proposal_eta(z = eta$sample, u = u, kappa_v = kappa_v)
+  proposal_eta <- draw_proposal_eta(
+          z = eta$sample,
+          u = u,
+          kappa_v = kappa_v,
+          problem = problem
+  )
   alpha <- acceptance_probability(
     proposal_eta = proposal_eta,
     previous_eta = eta,
     kappa_v = kappa_v,
-    u = u
+    u = u,
+    problem = problem
   )
   if (runif(1)[1] < alpha) {
     eta = proposal_eta
