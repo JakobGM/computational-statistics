@@ -1,6 +1,5 @@
 # Exercise 2 - Implementation of the MCMC sampler
 
-$$
 \newcommand{\kappau}{\kappa_u}
 \newcommand{\kappav}{\kappa_v}
 \newcommand{\uvec}{\boldsymbol{u}}
@@ -8,7 +7,6 @@ $$
 \newcommand{\yvec}{\boldsymbol{y}}
 \newcommand{\Evec}{\boldsymbol{E}}
 \newcommand{\etavec}{\boldsymbol{E}}
-$$
 
 ## Importing the data set
 
@@ -16,6 +14,9 @@ We will now implement an MCMC sampler for the parameters discussed in exercise 1
 First, let's import the libraries which will be used in the implementation.
 
 ```{r}
+# Lots of helper functions and new data types
+library(tidyverse)
+
 # For sparse matrix support
 library(spam)
 
@@ -148,20 +149,102 @@ acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u) {
 
 Implement MCMC
 
-```{r}
+```{r, cache = TRUE}
+steps <- 5000
+
 # Initial guess for parameters u and eta
 u <- c(rep_len(0.0, problem$n))
 eta <- draw_proposal_eta(z = u, u = u, kappa_v = 0.0001)
 
-for (i in seq(1, 5000)) {
+# Data structures for saving sample results
+kappa_us <- vector()
+kappa_vs <- vector()
+etas <- matrix(data = NA, nrow = steps, ncol = problem$n)
+us <- matrix(data = NA, nrow = steps, ncol = problem$n)
+
+for (i in seq(1, steps)) {
   kappa_u <- draw_kappa_u(u = u)
   kappa_v <- draw_kappa_v(eta = eta$sample, u = u)
   u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample)
   
   proposal_eta <- draw_proposal_eta(z = eta$sample, u = u, kappa_v = kappa_v)
-  alpha <- acceptance_probability(proposal_eta = proposal_eta, previous_eta = eta, kappa_v = kappa_v, u = u)
+  alpha <- acceptance_probability(
+    proposal_eta = proposal_eta,
+    previous_eta = eta,
+    kappa_v = kappa_v,
+    u = u
+  )
   if (runif(1)[1] < alpha) {
     eta = proposal_eta
   }
+  
+  # Appending results
+  kappa_us <- c(kappa_us, kappa_u)
+  kappa_vs <- c(kappa_vs, kappa_v)
+  us[i,] = u
+  etas[i,] = eta$sample
 }
+```
+
+## Convergence diagnostics
+
+```{r}
+vs <- etas - us
+
+samples <- tibble(
+  step = seq(1, steps),
+  kappa_u = kappa_us,
+  kappa_v = kappa_vs,
+  u_1 = us[, 1],
+  u_2 = us[, 2],
+  v_1 = vs[, 1]
+)
+params <- colnames(samples)[-1]
+```
+
+### Trace plots
+
+```{r}
+samples %>% ggplot(aes(x = step)) +
+  geom_line(aes(y = kappa_u)) +
+  ylim(0, 100)
+samples %>% ggplot(aes(x = step)) +
+  geom_line(aes(y = kappa_v))
+samples %>% ggplot(aes(x = step)) +
+  geom_line(aes(y = u_1))
+samples %>% ggplot(aes(x = step)) +
+  geom_line(aes(y = u_2))
+samples %>% ggplot(aes(x = step)) +
+  geom_line(aes(y = v_1))
+```
+
+### Autocorrelation plots
+
+```{r}
+acf(samples$kappa_u)
+acf(samples$kappa_v)
+acf(samples$u_1)
+acf(samples$u_2)
+acf(samples$v_1)
+```
+ 
+### Convergence check with `geweke.diag()`
+ 
+```{r}
+library(coda)
+library(kableExtra)
+
+burnins <- seq(1, steps/10)
+effective_samples <- samples[-burnins, -1]
+z_statistics <- geweke.diag(
+  effective_samples,
+  frac1=0.1, frac2=0.5
+)$z
+p_values <- pnorm(abs(z_statistics), lower.tail = FALSE)
+geweke_results <- tibble(
+  parameter = names(z_statistics),
+  z_statistic = z_statistics,
+  p_value = p_values
+)
+geweke_results %>% kable()
 ```
