@@ -1,13 +1,5 @@
 # Exercise 2 - Implementation of the MCMC sampler
 
-\newcommand{\kappau}{\kappa_u}
-\newcommand{\kappav}{\kappa_v}
-\newcommand{\uvec}{\boldsymbol{u}}
-\newcommand{\Rmat}{\boldsymbol{R}}
-\newcommand{\yvec}{\boldsymbol{y}}
-\newcommand{\Evec}{\boldsymbol{E}}
-\newcommand{\etavec}{\boldsymbol{E}}
-
 ## Importing the data set
 
 We will now implement an MCMC sampler for the parameters discussed in exercise 1.
