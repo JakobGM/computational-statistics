@@ -2,8 +2,97 @@
 
 ## a) Implementation in `R-INLA`
 
-(answer)
+```{r}
+library(INLA)
+attach(Oral)
+
+g <- system.file("demodata/germany.graph", package="INLA")
+data <- tibble(
+  region_structured = seq(1, problem$n),
+  region_random = seq(1, problem$n),
+  Y = Oral$Y,
+  E = Oral$E
+)
+
+kappa_v_hyper <- list(
+  prec = list(prior = "loggamma", param = c(1, 0.01))
+)
+kappa_u_hyper <- list(
+  prec = list(prior = "loggamma", param = c(1, 0.01))
+)
+
+
+formula <- Y ~
+  -1 +
+  f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
+  f(region_random, model = "iid", hyper = kappa_v_hyper)
+
+result <- inla(
+  formula = formula,
+  family = "poisson",
+  data = data,
+  E = E,
+  verbose = FALSE,
+  keep = TRUE,
+  control.compute = list(dic = TRUE)
+)
+result <- inla.hyperpar(result)
+
+inla_u <- result$summary.random$region_structured
+inla_v <- result$summary.random$region_random
+
+marginals <- result$marginals.hyperpar
+inla_kappa_u <- marginals$`Precision for region_structured`
+inla_kappa_v <- marginals$`Precision for region_random`
+
+inla_kappa_u_smoothed <- inla.smarginal(inla_kappa_u)
+inla_kappa_v_smoothed <- inla.smarginal(inla_kappa_v)
+
+kappa_u_data <- as_tibble(inla_kappa_u_smoothed)
+kappa_u_plot <- kappa_u_data %>%
+  ggplot(aes(x = x, y = y)) +
+  geom_line()
+
+kappa_v_data <- as_tibble(inla_kappa_v_smoothed)
+kappa_v_plot <- kappa_v_data %>%
+  ggplot(aes(x = x, y = y)) +
+  geom_line()
+```
 
 ## b) Smoking as new covariate
 
-(answer)
+```{r}
+smoking = read.table("data/smoking.dat")$V1
+data <- add_column(data, smoking) 
+
+linear_smoking_formula <- Y ~
+  -1 +
+  f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
+  f(region_random, model = "iid", hyper = kappa_v_hyper) +
+  smoking
+
+linear_result <- inla(
+  formula = linear_smoking_formula,
+  family = "poisson",
+  data = data,
+  E = E,
+  verbose = FALSE,
+  keep = TRUE,
+  control.compute = list(dic = TRUE)
+)
+
+nonlinear_smoking_formula <- Y ~
+  -1 +
+  f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
+  f(region_random, model = "iid", hyper = kappa_v_hyper) +
+  f(smoking, model = "rw2")
+nonlinear_result <- inla(
+  formula = nonlinear_smoking_formula,
+  family = "poisson",
+  data = data,
+  E = E,
+  verbose = FALSE,
+  keep = TRUE,
+  control.compute = list(dic = TRUE)
+)
+```
