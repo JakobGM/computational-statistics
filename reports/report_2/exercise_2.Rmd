@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Exercise 2 - Implementation of the MCMC sampler
 
 ## Importing the data set
@@ -20,7 +25,7 @@ library(colorspace)
 col <- diverge_hcl(8)
 ```
 
-The data of interest is contained in the \texttt{Oral} dataset.
+The data of interest is contained in the `Oral` dataset.
 The standardised mortality rates (SMR) $y_i / E_i$ can be visualized on top of the map of germany's districts.
 
 ```{r}
@@ -34,9 +39,9 @@ The neighbourhood structure matrix, $\Rmat$, is provided in the data file \textt
 load("data/tma4300_ex2_Rmatrix.Rdata")
 ```
 
-We will now define a list named \texttt{problem}, which will contain our global state for our problem.
+We will now define a list named \texttt{problem}, which will contain the global state for our problem.
 It will contain constants for our problem, such as $\yvec$, $\Evec$, $n$, $\Rmat$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
-These variables will remain constants through all the iterations of the MCMC algorithm.
+These variables will remain constant through all the iterations of the MCMC algorithm, and will be passed as the `problem` parameter to all functions.
 
 ```{r}
 problem = list(
@@ -53,9 +58,18 @@ problem = list(
 
 ## Implementing full conditional sampling functions
 
-### $\kappa_u$ and $\kappa_v$
+We start by implementing full conditional samplers for $\boldsymbol{\kappa}^{(m)}_u$, $\boldsymbol{\kappa}^{(m)}_v$, and $\boldsymbol{u}^{(m)}$.
 
-Implementing full conditional sampler for $\kappa_u$ and $\kappa_v$.
+### Sampling $\boldsymbol{\kappa}^{(m)}_u$ and $\boldsymbol{\kappa}^{(m)}_v$
+
+The full conditional for $\kappa_u$ is
+
+$$
+\kappa_u~|~\boldsymbol{y}, \kappa_v^{(m-1)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
+\sim \text{Gamma}\left(\frac{n - 1}{2} + \alpha_u, \frac{1}{2} {\boldsymbol{u}^{(m - 1)}}^{T} R \boldsymbol{u}^{(m - 1)} + \beta_u \right)
+$$
+
+Which can be implemented with the \texttt{rgamma} R-function.
 
 ```{r}
 draw_kappa_u <- function(u, problem) {
@@ -66,6 +80,15 @@ draw_kappa_u <- function(u, problem) {
 }
 ```
 
+Likewise, for $\kappa_v$ we have the full conditional
+
+$$
+\kappa_v~|~\boldsymbol{y}, \kappa_u^{(m)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
+\sim \text{Gamma}\left(\frac{n}{2} + \alpha_v, \frac{1}{2} \left(\boldsymbol{\eta}^{(m - 1)} - \boldsymbol{u}^{(m - 1)} \right)^{T} \left(\boldsymbol{\eta}^{(m - 1)} - \boldsymbol{u}^{(m - 1)} \right) + \beta_v \right),
+$$
+
+Which will implemented in the same way
+
 ```{r}
 draw_kappa_v <- function(eta, u, problem) {
   shape <- problem$n / 2 + problem$alpha_v
@@ -75,9 +98,28 @@ draw_kappa_v <- function(eta, u, problem) {
 }
 ```
 
-### $\uvec$
+### Full conditional sampler for $\uvec$
 
-Draw full conditional $\vec{u}$
+The full conditional for $\boldsymbol{u}$ is
+
+$$
+\boldsymbol{u}~|~\boldsymbol{\eta}^{(n - 1)}, \kappa_u^{(m)}, \kappa_v^{(m)}
+\sim
+\mathcal{N}\left(
+  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} R\right)^{-1} \kappa_v^{(m)} \boldsymbol{\eta}^{(m - 1)},~
+  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} R\right)^{-1}
+\right)
+$$
+Now, notice that the adjacency matrix $R$ is a sparse matrix. Thus, $\left(\kappa_v^{(n - 1)} I + \kappa_u^{(n - 1)} R\right)$ is also a sparse matrix.
+It is therefore preferable to store this matrix as a *sparse* matrix, using the `spam` R-library.
+Additionally, we use the `rmvnorm.canonical` function in order to formulate the normal distribution in form of the sparse *precision* matrix instead of the covariance matrix. With other words
+
+\begin{align*}
+Q \leftarrow &\kappa_v^{(m)} I + \kappa_u^{(m)} R \\
+b \leftarrow &\kappa_v^{(m)} \boldsymbol{\eta}^{(m - 1)}
+\end{align*}
+
+The implementation of the full conditional sampler for $\boldsymbol{u}$ therefore becomes
 
 ```{r}
 draw_u <- function(kappa_v, kappa_u, eta, problem) {
@@ -88,9 +130,42 @@ draw_u <- function(kappa_v, kappa_u, eta, problem) {
 }
 ```
 
-### $\etavec$
+### Metropolis-Hastings step for $\etavec$
 
-Draw full conditional $\vec{\eta}$
+The sampling for $\boldsymbol{\eta}$ requires a Metropolis-Hastings step, since the distribution is not in a well-known form.
+
+We will draw a proposal, $\boldsymbol{\eta}^*$, from the taylor expansion $q(\boldsymbol{\eta}^* ~|~ ...)$ of $p(\boldsymbol{\eta}^* ~|~ ...)$ around $z = \boldsymbol{\eta}^{(m - 1)}$.
+
+$$
+q \left(
+  \boldsymbol{\eta^*}
+  ~|~
+    \boldsymbol{z} = \boldsymbol{\eta}^{(m - 1)},
+    \boldsymbol{y},
+    \boldsymbol{u}^{(m)},
+    \kappa_u^{(m)},
+    \kappa_v^{(m)}
+\right)
+\propto
+\exp \left\{
+  -\frac{1}{2} {\boldsymbol{\eta}^*}^T
+    \left(
+      \kappa_v^{(m)} \textbf{I} + \text{diag}(c(\boldsymbol{\eta}^{(m - 1)})) 
+    \right)
+    \boldsymbol{\eta}^*
+  + {\boldsymbol{\eta}^*}^T \left( \kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)}) \right)
+\right\},
+$$
+
+with $b(\boldsymbol{z})$ and $c(\boldsymbol{z})$ defined as in exercise 1.
+Again, we can use the sparse, canonical representation in the implementation
+
+\begin{align*}
+  Q \leftarrow &\kappa_v^{(m)} \textbf{I} + \text{diag}(c(\boldsymbol{\eta}^{(m - 1)})) \\
+  b \leftarrow &\kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)})
+\end{align*}
+
+So the proposal sample drawer is therefore implemented as follows
 
 ```{r}
 source("data/dmvnorm.R")
@@ -107,10 +182,64 @@ draw_proposal_eta <- function(z, u, kappa_v, problem) {
 }
 ```
 
-Acceptance probability
+Here we have calculated the $\log q(\boldsymbol{\eta^*}~|~z = \boldsymbol{\eta}^{(m - 1)})$ using `dmvnorm.canonical` as implemented in the provided file \texttt{dmvnorm.R}.
+This is because it will be needed in the in the calculation for the acceptance probability $\boldsymbol{\alpha}^{(m)}$ for setting $\boldsymbol{\eta}^{(m)} \leftarrow \boldsymbol{\eta}^*$.
+
+$$
+\boldsymbol{\alpha}^{(m)}
+=
+\min \left(
+  1,
+  \frac{
+    p \left(
+      \boldsymbol{\eta^*}
+      ~|~
+      \boldsymbol{y},
+      \boldsymbol{u}^{(m)},
+      \kappa_u^{(m)},
+      \kappa_v^{(m)}
+      \right)
+  }{
+    p \left(
+      \boldsymbol{\eta^{(m-1)}}
+      ~|~
+      \boldsymbol{y},
+      \boldsymbol{u}^{(m)},
+      \kappa_u^{(m)},
+      \kappa_v^{(m)}
+      \right)
+  }
+  \cdot
+    \frac{
+      q \left(
+        \boldsymbol{\eta^{(m-1)}}
+        ~|~
+        \boldsymbol{z} = \boldsymbol{\eta}^*,
+        \boldsymbol{y},
+        \boldsymbol{u}^{(m)},
+        \kappa_u^{(m)},
+        \kappa_v^{(m)}
+        \right)
+    }{
+      q \left(
+        \boldsymbol{\eta^*}
+        ~|~
+        \boldsymbol{z} = \boldsymbol{\eta}^{(m - 1)},
+        \boldsymbol{y},
+        \boldsymbol{u}^{(m)},
+        \kappa_u^{(m)},
+        \kappa_v^{(m)}
+        \right)
+    }
+\right)
+$$
+
+It should be noted that these density calculations will be performed in log-space going forwards.
+
+The calculation of $\log{q(...)}$ is already handled by \texttt{draw_proposal_eta()}, but we must implement $\log{p(...)}$.
+First notice that all the conditionals are equal in both $p$ function invocations, so we need not normalize the implementation of $\log{p(...)}$ as the normality constants cancel out. The implementation is therefore as follows
 
 ```{r}
-
 eta_log_density <- function(eta, kappa_v, u, problem) {
   #' Proportional full conditional density for eta
   return(
@@ -120,7 +249,11 @@ eta_log_density <- function(eta, kappa_v, u, problem) {
     - t(exp(eta)) %*% problem$E
   )
 }
+```
 
+We can now implement the calculation of $\boldsymbol{\alpha}^{(m)}$.
+
+```{r}
 acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, problem) {
   log_p_forward <- eta_log_density(
           eta = proposal_eta$sample,
