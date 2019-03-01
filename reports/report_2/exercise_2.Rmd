@@ -248,7 +248,7 @@ z_statistics <- geweke.diag(
   effective_samples,
   frac1=0.1, frac2=0.5
 )$z
-p_values <- pnorm(abs(z_statistics), lower.tail = FALSE)
+p_values <- 2 * pnorm(abs(z_statistics), lower.tail = FALSE)
 geweke_results <- tibble(
   parameter = names(z_statistics),
   z_statistic = z_statistics,
