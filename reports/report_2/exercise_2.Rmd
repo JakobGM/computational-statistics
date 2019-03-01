@@ -201,39 +201,34 @@ vs <- etas - us
 
 samples <- tibble(
   step = seq(1, steps),
-  kappa_u = kappa_us,
-  kappa_v = kappa_vs,
-  u_1 = us[, 1],
-  u_2 = us[, 2],
-  v_1 = vs[, 1]
+  kappa_u = kappa_us, kappa_v = kappa_vs,
+  u_1 = us[, 80], u_2 = us[, 360], u_3 = us[, 500],
+  v_1 = vs[, 80], v_2 = vs[, 360], v_3 = vs[, 500]
 )
 params <- colnames(samples)[-1]
 ```
 
 ### Trace plots
 
-```{r}
-samples %>% ggplot(aes(x = step)) +
-  geom_line(aes(y = kappa_u)) +
-  ylim(0, 100)
-samples %>% ggplot(aes(x = step)) +
-  geom_line(aes(y = kappa_v))
-samples %>% ggplot(aes(x = step)) +
-  geom_line(aes(y = u_1))
-samples %>% ggplot(aes(x = step)) +
-  geom_line(aes(y = u_2))
-samples %>% ggplot(aes(x = step)) +
-  geom_line(aes(y = v_1))
+```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
+burnin <- seq(1, 500)
+samples %>%
+  slice(-burnin) %>%
+  gather(key, value, params) %>%
+  ggplot(aes(x = step)) +
+  geom_line(
+    aes(y = value)
+  ) +
+  facet_wrap(vars(key), scales = "free_y", ncol = 2)
 ```
 
 ### Autocorrelation plots
 
-```{r}
-acf(samples$kappa_u)
-acf(samples$kappa_v)
-acf(samples$u_1)
-acf(samples$u_2)
-acf(samples$v_1)
+```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
+par(mfrow=c(4,2))
+for (param in params) {
+  acf(samples[param])
+}
 ```
  
 ### Convergence check with `geweke.diag()`
