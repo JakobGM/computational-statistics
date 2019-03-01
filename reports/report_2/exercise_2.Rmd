@@ -255,4 +255,12 @@ geweke_results <- tibble(
   p_value = p_values
 )
 geweke_results %>% kable()
+
+zstats <- geweke.diag(us)
+pvals <- 2 * pnorm(abs(zstats$z), lower.tail = FALSE)
+hist <- hist(pvals)
+
+zstats2 <- geweke.diag(vs)
+pvals2 <- 2 * pnorm(abs(zstats$z), lower.tail = FALSE)
+hist2 <- hist(pvals2)
 ```
