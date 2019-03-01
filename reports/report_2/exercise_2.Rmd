@@ -136,7 +136,7 @@ acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, probl
   )
   
   log_q_forward <- proposal_eta$logprob
-  log_q_backward <- previous_eta$logprob
+  log_q_backward <- draw_proposal_eta(z = proposal_eta$sample, u = u, kappa_v = kappa_v, problem = problem)$logprob
   
   alpha <- exp(log_p_forward + log_q_backward - log_p_backward - log_q_forward)
   
