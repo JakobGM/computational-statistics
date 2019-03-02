@@ -387,6 +387,23 @@ burnin <- 1000
 load(file = "data/MCMC_result.Rdata")
 ```
 
+#### Time usage
+
+The time used by the algorithm is part of the returned result.
+
+```{r}
+result$time_used
+```
+
+$71~000$ iterations of the algorithm uses approximately 10 minutes, which implies the following time usage per iteration
+
+```{r}
+milliseconds <- 1000 * 60 * as.numeric(result$time_used_per_step)
+sprintf("~%1.1fms per iteration", milliseconds)
+```
+
+I.e., $\propto 8.6$ milliseconds per iteration, each iteration creating $2n + 3 = 1091$ double data points.
+
 # Exercise 3 - Convergence diagnostics
 
 We will now make an attempt at diagnosing the convergence of the samples generated from the Monte Carlo Markov Chain algorithm.
