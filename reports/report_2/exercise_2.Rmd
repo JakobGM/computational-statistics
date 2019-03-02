@@ -404,6 +404,46 @@ sprintf("~%1.1fms per iteration", milliseconds)
 
 I.e., $\propto 8.6$ milliseconds per iteration, each iteration creating $2n + 3 = 1091$ double data points.
 
+#### Acceptance rates
+
+The post-burnin acceptance rates, $\boldsymbol{\alpha}$, for the Metropolis-Hastings step which samples $\boldsymbol{\eta}^{(m)}$ is also retrievable from the result.
+
+```{r}
+alpha <- result$alpha[-c(1:burnin)]
+mean(alpha)
+```
+
+The acceptance probability is, on average, approximately $50\%$.
+A more interesting overview of the distribution of $\alpha^{(m)}$ can be observed by plotting a histogram.
+
+```{r}
+binwidth <- 0.04
+enframe(alpha) %>%
+  ggplot() +
+  aes(x = value) +
+  geom_histogram(
+    aes(y = binwidth * ..density..),
+    boundary = 0,
+    breaks = seq(0.0, 1.0, by = binwidth)
+  ) +
+  ylab("frequency") +
+  xlab(expression(alpha)) +
+  labs(
+    title = "Histogram of calculated acceptance probabilities",
+    caption = "The distribution of alpha values for all the post-burnin acceptance probabilities"
+  )
+```
+
+As you can see from the histogram for $\boldsymbol{\alpha}$, most values for $\alpha$ are either close to or equal to $0$ or $1$.
+This is the reason for the $\alpha$ mean being $\approx 0.5$. Half of the proposals are almost guaranteed to be accepted, while the other half is almost guaranteed not to. We can calculate the fraction of the acceptance probabilities that can be considered extreme, let's say $\alpha \notin [0.01, 0.99]$.
+
+```{r}
+extreme_values_count <- length(alpha[alpha < 0.01]) + length(alpha[alpha > 0.99])
+extreme_values_count / length(alpha)
+```
+
+$\approx 92\%$ of the proposals are of that nature!
+
 # Exercise 3 - Convergence diagnostics
 
 We will now make an attempt at diagnosing the convergence of the samples generated from the Monte Carlo Markov Chain algorithm.
