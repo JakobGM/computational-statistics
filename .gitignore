@@ -44,6 +44,7 @@ packrat/src/
 **/*.pdf
 **/*.html
 **/*_files
+**/*.md
 reports/report_1/base_cache/
 reports/report_1/part_D_cache/
 reports/**/*.log
@@ -52,3 +53,5 @@ reports/**/*.tex
 
 # INLA files
 **/inla.model*
+reports/report_2/data/MCMC_result.Rdata
+figure/

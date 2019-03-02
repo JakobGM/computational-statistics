@@ -5,6 +5,14 @@ output:
 ---
 # Exercise 2 - Implementation of the MCMC sampler
 
+\providecommand{\kappau}{\kappa_u}
+\providecommand{\kappav}{\kappa_v}
+\providecommand{\uvec}{\boldsymbol{u}}
+\providecommand{\Rmat}{\boldsymbol{R}}
+\providecommand{\yvec}{\boldsymbol{y}}
+\providecommand{\Evec}{\boldsymbol{E}}
+\providecommand{\etavec}{\boldsymbol{\eta}}
+
 ## Importing the data set
 
 We will now implement an MCMC sampler for the parameters discussed in exercise 1.
@@ -33,14 +41,14 @@ attach(Oral)
 germany.plot(Oral$Y / Oral$E, col=col, legend=TRUE)
 ```
 
-The neighbourhood structure matrix, $\Rmat$, is provided in the data file \texttt{tma4300_ex2_Rmatrix.Rdata}.
+The neighbourhood structure matrix, $\boldsymbol{R}$, is provided in the data file \texttt{tma4300_ex2_Rmatrix.Rdata}.
 
 ```{r}
 load("data/tma4300_ex2_Rmatrix.Rdata")
 ```
 
 We will now define a list named \texttt{problem}, which will contain the global state for our problem.
-It will contain constants for our problem, such as $\yvec$, $\Evec$, $n$, $\Rmat$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
+It will contain constants for our problem, such as $\yvec$, $\boldsymbol{E}$, $n$, $\boldsymbol{r}$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
 These variables will remain constant through all the iterations of the MCMC algorithm, and will be passed as the `problem` parameter to all functions.
 
 ```{r}
@@ -282,60 +290,96 @@ acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, probl
 
 ### Implementing the MCMC algorithm
 
-Implement MCMC
+We now have all the required components required to implement the outer loop MCMC algorithm.
+The algorithm requires initial values for $\boldsymbol{u}^{(1)}$ and $\boldsymbol{\eta}^{(1)}$.
+We will set (rather arbitrarily) $\boldsymbol{u}^{(1)} = \vec{0}$, while setting the value of $\boldsymbol{\eta}^{(0)}$ by sampling our proposal density $q(...)$ with the following parameters
+
+\begin{align*}
+  \boldsymbol{z} \leftarrow& \vec{0} \\
+  \boldsymbol{u} \leftarrow& \vec{0} \\
+  \kappa_v \leftarrow& 500
+\end{align*}
 
 ```{r, cache = TRUE}
-steps <- 5000
-
-# Initial guess for parameters u and eta
-u <- c(rep_len(0.0, problem$n))
-eta <- draw_proposal_eta(z = u, u = u, kappa_v = 0.0001, problem = problem)
-
-# Data structures for saving sample results
-kappa_us <- vector()
-kappa_vs <- vector()
-etas <- matrix(data = NA, nrow = steps, ncol = problem$n)
-us <- matrix(data = NA, nrow = steps, ncol = problem$n)
-
-for (i in seq(1, steps)) {
-  kappa_u <- draw_kappa_u(u = u, problem = problem)
-  kappa_v <- draw_kappa_v(eta = eta$sample, u = u, problem = problem)
-  u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample, problem = problem)
+MCMC <- function(steps, problem) {
+  # Initial guess for parameters u and eta
+  u <- c(rep_len(0.0, problem$n))
+  eta <- draw_proposal_eta(z = u, u = u, kappa_v = 500, problem = problem)
   
-  proposal_eta <- draw_proposal_eta(
-          z = eta$sample,
-          u = u,
-          kappa_v = kappa_v,
-          problem = problem
-  )
-  alpha <- acceptance_probability(
-    proposal_eta = proposal_eta,
-    previous_eta = eta,
-    kappa_v = kappa_v,
-    u = u,
-    problem = problem
-  )
-  if (runif(1)[1] < alpha) {
-    eta = proposal_eta
+  # Data structures for saving sample results
+  kappa_us <- vector()
+  kappa_vs <- vector()
+  etas <- matrix(data = NA, nrow = steps, ncol = problem$n)
+  us <- matrix(data = NA, nrow = steps, ncol = problem$n)
+  
+  for (i in seq(1, steps)) {
+    kappa_u <- draw_kappa_u(u = u, problem = problem)
+    kappa_v <- draw_kappa_v(eta = eta$sample, u = u, problem = problem)
+    u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample, problem = problem)
+    
+    proposal_eta <- draw_proposal_eta(
+            z = eta$sample,
+            u = u,
+            kappa_v = kappa_v,
+            problem = problem
+    )
+    alpha <- acceptance_probability(
+      proposal_eta = proposal_eta,
+      previous_eta = eta,
+      kappa_v = kappa_v,
+      u = u,
+      problem = problem
+    )
+    if (runif(1)[1] < alpha) {
+      eta = proposal_eta
+    }
+    
+    # Appending results
+    kappa_us <- c(kappa_us, kappa_u)
+    kappa_vs <- c(kappa_vs, kappa_v)
+    us[i,] = u
+    etas[i,] = eta$sample
   }
   
-  # Appending results
-  kappa_us <- c(kappa_us, kappa_u)
-  kappa_vs <- c(kappa_vs, kappa_v)
-  us[i,] = u
-  etas[i,] = eta$sample
+  # Returning the final result in the form of a list
+  result <- list(
+    kappa_u = kappa_us,
+    kappa_v = kappa_vs,
+    u = us,
+    eta = etas
+  )
+  return(result)
 }
+```
+
+We will sample a posterior sample size of $M = 70~000$ after haver a burn-in period of $1000$ steps.
+We will see shortly that this burn-in period is more than sufficient.
+
+```{r, eval = FALSE}
+M <- 70000
+burnin <- 1000
+result <- MCMC(steps = M + burnin, problem = problem)
+```
+```{r, show = FALSE, eval = FALSE}
+# Run this line if it is the first time you have executed MCMC and want to save the result
+save(result, list = c("result"), file = "MCMC_result.Rdata")
+```
+
+```{r, show = FALSE}
+# Load the saved result for `result`
+M <- 70000
+burnin <- 1000
+load(file = "data/MCMC_result.Rdata")
 ```
 
 ## Convergence diagnostics
 
 ```{r}
-vs <- etas - us
-
+vs <- result$eta - result$u
 samples <- tibble(
-  step = seq(1, steps),
-  kappa_u = kappa_us, kappa_v = kappa_vs,
-  u_1 = us[, 80], u_2 = us[, 360], u_3 = us[, 500],
+  step = seq(1, burnin + M),
+  kappa_u = result$kappa_u, kappa_v = result$kappa_v,
+  u_1 = result$u[, 80], u_2 = result$u[, 360], u_3 = result$u[, 500],
   v_1 = vs[, 80], v_2 = vs[, 360], v_3 = vs[, 500]
 )
 params <- colnames(samples)[-1]
@@ -344,14 +388,12 @@ params <- colnames(samples)[-1]
 ### Trace plots
 
 ```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
-burnin <- seq(1, 500)
+burnins <- seq(1, burnin)
 samples %>%
-  slice(-burnin) %>%
+  slice(-burnins) %>%
   gather(key, value, params) %>%
   ggplot(aes(x = step)) +
-  geom_line(
-    aes(y = value)
-  ) +
+  geom_line(aes(y = value)) +
   facet_wrap(vars(key), scales = "free_y", ncol = 2)
 ```
 
@@ -370,7 +412,7 @@ for (param in params) {
 library(coda)
 library(kableExtra)
 
-burnins <- seq(1, steps/10)
+burnins <- seq(1, burnin)
 effective_samples <- samples[-burnins, -1]
 z_statistics <- geweke.diag(
   effective_samples,
@@ -384,11 +426,11 @@ geweke_results <- tibble(
 )
 geweke_results %>% kable()
 
-zstats <- geweke.diag(us)
+zstats <- geweke.diag(result$u[-burnins,])
 pvals <- 2 * pnorm(abs(zstats$z), lower.tail = FALSE)
 hist <- hist(pvals)
 
-zstats2 <- geweke.diag(vs)
+zstats2 <- geweke.diag(vs[-burnins,])
 pvals2 <- 2 * pnorm(abs(zstats$z), lower.tail = FALSE)
 hist2 <- hist(pvals2)
 ```
