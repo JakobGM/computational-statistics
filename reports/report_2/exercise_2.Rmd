@@ -352,7 +352,7 @@ MCMC <- function(steps, problem) {
 }
 ```
 
-We will sample a posterior sample size of $M = 70~000$ after haver a burn-in period of $1000$ steps.
+A posterior sample size of $M = 70~000$, after having a burn-in period of $1000$ steps, is sampled.
 We will see shortly that this burn-in period is more than sufficient.
 
 ```{r, eval = FALSE}
@@ -372,10 +372,18 @@ burnin <- 1000
 load(file = "data/MCMC_result.Rdata")
 ```
 
-## Convergence diagnostics
+# Exercise 3 - Convergence diagnostics
+
+We will now make an attempt at diagnosing the convergence of the samples generated from the Monte Carlo Markov Chain algorithm.
+First, since $\boldsymbol{\eta}$ is decomposed as $\boldsymbol{u} + \boldsymbol{u}$, we can retrieve samples of $\boldsymbol{v} = \boldsymbol{\eta} - \boldsymbol{u}$.
 
 ```{r}
 vs <- result$eta - result$u
+```
+
+We will investigate the precision parameters $\kappa_u$ and $\kappa_v$ in addition to three randomly chosen components of $\boldsymbol{u}$ and $\boldsymbol{v}$. The three components $\{80, 360, 500\}$ will be used for both $\boldsymbol{u}$ and $\boldsymbol{v}$. This data subset is inserted into a data frame.
+
+```{r}
 samples <- tibble(
   step = seq(1, burnin + M),
   kappa_u = result$kappa_u, kappa_v = result$kappa_v,
@@ -385,7 +393,9 @@ samples <- tibble(
 params <- colnames(samples)[-1]
 ```
 
-### Trace plots
+### 3a) Trace plots
+
+First, we will plot the trace plot for all the chosen sample parameters.
 
 ```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
 burnins <- seq(1, burnin)
@@ -397,7 +407,7 @@ samples %>%
   facet_wrap(vars(key), scales = "free_y", ncol = 2)
 ```
 
-### Autocorrelation plots
+### 3b) Autocorrelation plots
 
 ```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
 par(mfrow=c(4,2))
@@ -406,7 +416,7 @@ for (param in params) {
 }
 ```
  
-### Convergence check with `geweke.diag()`
+### 3c) Convergence check with `geweke.diag()`
  
 ```{r}
 library(coda)
