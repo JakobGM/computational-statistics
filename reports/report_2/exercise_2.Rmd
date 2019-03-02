@@ -406,7 +406,7 @@ I.e., $\propto 8.6$ milliseconds per iteration, each iteration creating $2n + 3 
 
 #### Acceptance rates
 
-The post-burnin acceptance rates, $\boldsymbol{\alpha}$, for the Metropolis-Hastings step which samples $\boldsymbol{\eta}^{(m)}$ is also retrievable from the result.
+The post-burn-in acceptance rates, $\boldsymbol{\alpha}$, for the Metropolis-Hastings step which samples $\boldsymbol{\eta}^{(m)}$ is also retrievable from the result.
 
 ```{r}
 alpha <- result$alpha[-c(1:burnin)]
@@ -430,7 +430,7 @@ enframe(alpha) %>%
   xlab(expression(alpha)) +
   labs(
     title = "Histogram of calculated acceptance probabilities",
-    caption = "The distribution of alpha values for all the post-burnin acceptance probabilities"
+    caption = "The distribution of alpha values for all the post-burn-in acceptance probabilities"
   )
 ```
 
@@ -467,7 +467,9 @@ params <- colnames(samples)[-1]
 
 ### 3a) Trace plots
 
-First, we will plot the trace plot for all the chosen sample parameters.
+#### After burn-in period
+
+First, we will plot the trace plots for all the chosen sample parameters, with the burn-in period removed.
 
 ```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
 burnins <- seq(1, burnin)
@@ -476,8 +478,50 @@ samples %>%
   gather(key, value, params) %>%
   ggplot(aes(x = step)) +
   geom_line(aes(y = value)) +
-  facet_wrap(vars(key), scales = "free_y", ncol = 2)
+  facet_wrap(vars(key), scales = "free_y", ncol = 2) +
+  labs(
+    title = "Parameter trace plots",
+    caption = "Figure 3-1: Sample line plot for each step of the MCMC algorithm (post-burn-in)"
+  )
 ```
+
+By observing figure `3-1`, we can observe that all 8 parameters portray a "band-like" shape, which is a good indication for convergence.
+Additionally, there is no indication of the parameters becoming "stuck" at any point during the iterations.
+The samples of the three $\boldsymbol{v}$-components seem to be symmetrically distributed around $0$, which is what we would expect to see from these unstructured white-noise parameters. The post-burn-in posterior means can be calculated in order to confirm this
+
+```{r}
+samples[,-1] %>% slice(-burnins) %>% colMeans() %>% kable()
+```
+
+Nothing out of the ordinary here to indicate something wrong with the implementation.
+
+#### burn-in period
+
+Lastly, let's justify our earlier assumption of a burn-in period of $1~000$ steps being more than sufficient.
+We will plot trace plots for the first $2~000$ steps.
+
+```{r, fig.width = 8.3, fig.height = 8, fig.fullwidth=TRUE}
+beginning <- seq(1, 2 * burnin)
+samples %>%
+  slice(beginning) %>%
+  gather(key, value, params) %>%
+  ggplot(aes(x = step)) +
+  geom_line(aes(y = value)) +
+  geom_vline(
+    xintercept = burnin,
+    color = "red"
+  ) +
+  facet_wrap(vars(key), scales = "free_y", ncol = 2) +
+  labs(
+    title = "Parameter burn-in trace plots",
+    caption = "Figure 3-2: Sample line plot for beginning steps of the MCMC algorithm (burn-in). The red line indicates the chosen burn-in boundary."
+  )
+```
+
+From figure `3-2` it becomes clear that all the 8 chains have converged long before a thousand steps (red vertical line) have been calculated.
+$\kappa_u$ is the most extreme example beginning at $\approx 25~000$, and we have already seen that it has a calculated posterior mean of $\approx 16$, but it quickly converges to the (probably) correct domain.
+
+We can also observe from this plot that the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation, analysis of which will be coming up in the next section.
 
 ### 3b) Autocorrelation plots
 
