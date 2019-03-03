@@ -532,8 +532,9 @@ Now we plot the autocorrelation of each of the 8 parameters of interest.
 
 ```{r acf, fig.width = 8.3, fig.height = 10, fig.fullwidth=TRUE, fig.cap = "\\label{fig:acf} Autocorrelation plots for all 8 parameters of interest."}
 par(mfrow=c(4,2))
+effective_samples <- samples[-burnins, -1]
 for (param in params) {
-  acf(samples[param])
+  acf(effective_samples[param])
 }
 ```
 
