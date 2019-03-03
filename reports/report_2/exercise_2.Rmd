@@ -618,3 +618,24 @@ As can be seen in figure \ref{fig:p_values_plot}, nothing points to the contrary
 
 None of the three convergence diagnostic methods definitely refute the notion of chain convergence, which is good.
 It is never possible to conclude with \textit{certainty} that an MCMC algorithm has converged, but the presented diagnostics strengthens our belief in that the chains have converged and that the post-burn-in samples are distributed according to the target distributions.
+
+
+# Exercise 4 - Effective sample size
+
+### Theory
+
+We now want to investigate the effective sample size (ESS) for our $\kappa_u$ and $\kappa_v$ parameter samples.
+
+ESS is an estimation for how many perfectly independent samples that would be required in order to obtain a parameter estimate that has the \textit{same} precision as an estimate generated from our MCMC sampler with $M$ samples. Therefore, $\text{ESS} \leq M$ in all cases, and the closer they are, the better.
+
+In order to calculate this, first define the \textit{autocorrelation time}, $\tau$, as
+
+$$
+\tau := 1 + 2 \cdot \sum_{k = 1}^{\infty} \rho(k),
+$$
+where $\rho(k)$ is the autocorrelation at lag $k$, earlier shown in the ACF plots in exercise 3.
+Now, ESS can be calculated as
+
+$$
+\text{ESS} = \frac{N}{\tau}
+$$
