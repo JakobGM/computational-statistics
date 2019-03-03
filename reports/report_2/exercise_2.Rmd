@@ -539,8 +539,15 @@ for (param in params) {
 ```
 
 \newpage
-As we can see in figure \ref{fig:acf}, $\kappa_v$ has the greatest degree of autocorrelation, as predicted from the trace plots in figure \ref{fig:burnin} earlier, while $\kappa_u$ has comparatively much less autocorrelation.
-The three $\boldsymbol{v}$ components, i.e. unstructured random noise, have the lowest degree of autocorrelation, also as predicted from the previous plots.
+As we can see in figure \ref{fig:acf}, $\kappa_v$ and $\kappa_u$ show the greatest degree of autocorrelation, as predicted from the trace plots in figure \ref{fig:burnin} earlier. We can investigate this in more detail by plotting the ACF for $\kappa_v$ with a larger displayed lag.
+
+```{r acf_kappa_u, fig.cap = "\\label{fig:acf_kappa_u} Autocorrelation function plot for kappa_u with max lag set to 200."}
+acf(effective_samples["kappa_u"], lag.max = 200)
+```
+
+As can be seen in figure \ref{fig:acf_kappa_u}, a lag of $\approx 200$ is required before two samples can be considered independent of each other. This autocorrelation must be remedied by generating a sufficient amount of samples, as it reduces our effective number of samples.
+
+The three $\boldsymbol{v}$ components in figure \ref{fig:acf}, i.e. unstructured random noise, have the lowest degree of autocorrelation, also as predicted from the previous plots.
 
  
 ### 3c) Convergence check with `geweke.diag()`
@@ -559,7 +566,6 @@ It are these $Z$-statistics which can be calculated for our parameters of intere
 
 ```{r}
 library(coda)
-effective_samples <- samples[-burnins, -1]
 z_statistics <- geweke.diag(
   effective_samples,
   frac1=0.1, frac2=0.5
