@@ -639,3 +639,17 @@ Now, ESS can be calculated as
 $$
 \text{ESS} = \frac{N}{\tau}
 $$
+
+### Calculation and interpretation
+
+The \texttt{effectiveSize()} function from the \texttt{coda} R-library can be used to calculate the ESS for our MCMC samples.
+
+```{r}
+ESS <- effectiveSize(usable_samples)
+ESS[c("kappa_u", "kappa_v")]
+```
+
+What does this imply?
+It is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $766$ and $663$ samples, respectively, in order to obtain parameter estimates with the same precision as if we used our MCMC samples of size $70~000$. This is approximately $1\%$.
+
+With other words, an independent sampler that runs 100 times as slow as our MCMC implementation would therefore be of approximately equal benefit as our MCMC implementation, not considering memory usage and burn-in periods.
