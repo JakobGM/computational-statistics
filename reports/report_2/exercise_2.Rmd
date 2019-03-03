@@ -532,9 +532,9 @@ Now we plot the autocorrelation of each of the 8 parameters of interest.
 
 ```{r acf, fig.width = 8.3, fig.height = 10, fig.fullwidth=TRUE, fig.cap = "\\label{fig:acf} Autocorrelation plots for all 8 parameters of interest."}
 par(mfrow=c(4,2))
-effective_samples <- samples[-burnins, -1]
+usable_samples <- samples[-burnins, -1]
 for (param in params) {
-  acf(effective_samples[param])
+  acf(usable_samples[param])
 }
 ```
 
@@ -542,7 +542,7 @@ for (param in params) {
 As we can see in figure \ref{fig:acf}, $\kappa_v$ and $\kappa_u$ show the greatest degree of autocorrelation, as predicted from the trace plots in figure \ref{fig:burnin} earlier. We can investigate this in more detail by plotting the ACF for $\kappa_v$ with a larger displayed lag.
 
 ```{r acf_kappa_u, fig.cap = "\\label{fig:acf_kappa_u} Autocorrelation function plot for kappa_u with max lag set to 200."}
-acf(effective_samples["kappa_u"], lag.max = 200)
+acf(usable_samples["kappa_u"], lag.max = 200)
 ```
 
 As can be seen in figure \ref{fig:acf_kappa_u}, a lag of $\approx 200$ is required before two samples can be considered independent of each other. This autocorrelation must be remedied by generating a sufficient amount of samples, as it reduces our effective number of samples.
@@ -567,7 +567,7 @@ It are these $Z$-statistics which can be calculated for our parameters of intere
 ```{r}
 library(coda)
 z_statistics <- geweke.diag(
-  effective_samples,
+  usable_samples,
   frac1=0.1, frac2=0.5
 )$z
 ```
