@@ -5,19 +5,15 @@ author:
 - "Jakob Gerhard Martinussen"
 date: "Spring 2019"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    fig_caption: yes
+  html_document:
+    fig_caption: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
-# Automatically apply code formatter for code blocks
-library(formatR)
 library(knitr)
-library(docstring)
-showsol <- FALSE
-opts_chunk$set(tidy.opts = list(width.cutoff = 68), tidy = FALSE, warning = FALSE, error = FALSE, message = FALSE, echo = TRUE, cache = FALSE)
+knitr::opts_chunk$set(echo = TRUE, fig.pos = '!h')
 ```
 
 ```{r child = 'exercise_1.Rmd'}

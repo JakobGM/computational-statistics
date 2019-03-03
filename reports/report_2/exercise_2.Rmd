@@ -1,7 +1,9 @@
 ---
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    fig_caption: yes
+  html_document:
+    fig_caption: yes
 ---
 # Exercise 2 - Implementation of the MCMC sampler
 
@@ -500,7 +502,7 @@ Nothing out of the ordinary here to indicate something wrong with the implementa
 Lastly, let's justify our earlier assumption of a burn-in period of $1~000$ steps being more than sufficient.
 We will plot trace plots for the first $2~000$ steps.
 
-```{r, fig.width = 8.3, fig.height = 8, fig.fullwidth=TRUE}
+```{r, fig.width = 8.3, fig.height = 8, fig.fullwidth=TRUE, fig.cap = "\\label{fig:burnin} Sample line plot for beginning steps of the MCMC algorithm (burn-in). The red line indicates the chosen burn-in boundary."}
 beginning <- seq(1, 2 * burnin)
 samples %>%
   slice(beginning) %>%
