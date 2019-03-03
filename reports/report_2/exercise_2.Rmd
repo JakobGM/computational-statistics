@@ -606,3 +606,8 @@ v_histogram <- hist(v_p_values, xlab = "p-value", main = "Components of v")
 ```
 
 As can be seen in figure \ref{fig:p_values_plot}, nothing points to the contrary of the $p$-values being realizations of a uniform distribution. There is therefore no reason to conclude that we do not have convergence.
+
+#### Conclusion
+
+None of the three convergence diagnostic methods definitely refute the notion of chain convergence, which is good.
+It is never possible to conclude with \textit{certainty} that an MCMC algorithm has converged, but the presented diagnostics strengthens our belief in that the chains have converged and that the post-burn-in samples are distributed according to the target distributions.
