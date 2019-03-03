@@ -653,3 +653,15 @@ What does this imply?
 It is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $766$ and $663$ samples, respectively, in order to obtain parameter estimates with the same precision as if we used our MCMC samples of size $70~000$. This is approximately $1\%$.
 
 With other words, an independent sampler that runs 100 times as slow as our MCMC implementation would therefore be of approximately equal benefit as our MCMC implementation, not considering memory usage and burn-in periods.
+
+### Possible improvements for the ESS values
+
+Large values for ESS is to be preferred, and there are several strategies that can be devised in order to improve the value for ESS, for instance
+
+\begin{itemize}
+  \item Combine the results of \textit{multiple} independent chains. Compare the results in order to check convergence and if they mix properly.
+  \item Perform more steps of the MCMC algorithm. This would of course increase the absolute value of the ESS, but might not increase its \textit{relative} value.
+  \item Try to integrate out certain variables, for instance $\kappa_v$ and $\kappa_u$, but this might not be analytically feasible. 
+  \item Finding a better proposal density for $\boldsymbol{\eta}$. This will increase the acceptance probability, and therefore decrease the autocorrelation of $\boldsymbol{\eta}$ and all its dependents.
+  \item Reparametrizing the model.
+\end{itemize}
