@@ -622,6 +622,8 @@ It is never possible to conclude with \textit{certainty} that an MCMC algorithm 
 
 # Exercise 4 - Effective sample size
 
+## ESS
+
 ### Theory
 
 We now want to investigate the effective sample size (ESS) for our $\kappa_u$ and $\kappa_v$ parameter samples.
@@ -665,3 +667,23 @@ Large values for ESS is to be preferred, and there are several strategies that c
   \item Finding a better proposal density for $\boldsymbol{\eta}$. This will increase the acceptance probability, and therefore decrease the autocorrelation of $\boldsymbol{\eta}$ and all its dependents.
   \item Reparametrizing the model.
 \end{itemize}
+
+## Relative ESS
+
+### Calculation
+
+We can also calculate the \textit{relative} ESS by dividing the mean ESS by the time used by the MCMC algorithm.
+
+```{r}
+seconds_used <- 60 * as.numeric(result$time_used)
+relative_ESS <- mean(ESS[c("kappa_u", "kappa_v")]) / seconds_used
+sprintf("%1.3f effective samples per second", relative_ESS)
+```
+
+Our implementation generates $\approx 1.16$ effective samples per second.
+
+### Interpretation
+
+In isolation, this might not be very interesting, but it is very useful for comparison purposes.
+Making a change to an MCMC implementation in order to improve its resulting ESS might not be worth it if it substantially increases the time used by the algorithm. Solely comparing values for ESS not give the entire picture of the situation. For instance, "blocking" correlated variables updates together might be too slow compared to a more naive joint update, and the change may not be worth it in terms of computational time cost. Comparison of relative ESS can in such cases be used as a deciding factor.
+
