@@ -1,3 +1,10 @@
+---
+output:
+  pdf_document:
+    fig_caption: yes
+  html_document:
+    fig_caption: yes
+---
 # Exercise 6 - Comparison to `INLA` and inclusion of covariate information
 
 ## a) Implementation in `R-INLA`
@@ -33,7 +40,6 @@ result <- inla(
   data = data,
   E = E,
   verbose = FALSE,
-  keep = TRUE,
   control.compute = list(dic = TRUE)
 )
 result <- inla.hyperpar(result)
@@ -77,7 +83,6 @@ linear_result <- inla(
   data = data,
   E = E,
   verbose = FALSE,
-  keep = TRUE,
   control.compute = list(dic = TRUE)
 )
 
@@ -92,7 +97,6 @@ nonlinear_result <- inla(
   data = data,
   E = E,
   verbose = FALSE,
-  keep = TRUE,
   control.compute = list(dic = TRUE)
 )
 ```
