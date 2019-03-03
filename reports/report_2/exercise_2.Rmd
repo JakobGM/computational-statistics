@@ -492,6 +492,7 @@ Additionally, there is no indication of the parameters becoming "stuck" at any p
 The samples of the three $\boldsymbol{v}$-components seem to be symmetrically distributed around $0$, which is what we would expect to see from these unstructured white-noise parameters. The post-burn-in posterior means can be calculated in order to confirm this
 
 ```{r}
+library(kableExtra)
 samples[,-1] %>% slice(-burnins) %>% colMeans() %>% kable()
 ```
 
