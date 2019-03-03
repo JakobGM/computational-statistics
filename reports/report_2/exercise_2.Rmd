@@ -543,17 +543,45 @@ The three $\boldsymbol{v}$ components, i.e. unstructured random noise, have the 
 
  
 ### 3c) Convergence check with `geweke.diag()`
- 
+
+We will test the convergence of the Markov chains by using the function \texttt{geweke.diag()} from the \texttt{coda} R-package.
+Each chain is tested independently in the following way
+
+\begin{itemize}
+  \item Remove the burn-in samples.
+  \item Extract the first $10\%$ samples and $50\%$ last samples from the chain.
+  \item Calculate the difference of the two sample means, and divide by its estimated standard error.
+  \item Under the assumption that \textit{all} the samples are drawn from the stationary distribution of the chain, and the two chains being assymptotically independent, the result should be standard normal.
+\end{itemize}
+
+It are these $Z$-statistics which can be calculated for our parameters of interest with \texttt{geweke.diag()}. 
+
 ```{r}
 library(coda)
-library(kableExtra)
-
-burnins <- seq(1, burnin)
 effective_samples <- samples[-burnins, -1]
 z_statistics <- geweke.diag(
   effective_samples,
   frac1=0.1, frac2=0.5
 )$z
+```
+
+We can now perform the following hypothesis test
+
+\begin{gather*}
+  \mathrm{H_0}: \text{The Markov chain has converged} \\
+  \text{ vs. } \\
+  \mathrm{H_1}: \text{The Markov chain has } \textit{not} \text{ converged}.
+\end{gather*}
+
+This is a two-tailed hypothesis test, for which we can calculate a corresponding $p$-value for
+
+$$
+p\text{-value} = 2 \cdot \text{P}(Z \geq |z|)
+$$
+
+This is what we will now calculate. Now, remember that a discarded null hypothesis in this case implies *non-convergence*, not the other way around.
+
+```{r}
 p_values <- 2 * pnorm(abs(z_statistics), lower.tail = FALSE)
 geweke_results <- tibble(
   parameter = names(z_statistics),
@@ -561,12 +589,20 @@ geweke_results <- tibble(
   p_value = p_values
 )
 geweke_results %>% kable()
-
-zstats <- geweke.diag(result$u[-burnins,])
-pvals <- 2 * pnorm(abs(zstats$z), lower.tail = FALSE)
-hist <- hist(pvals)
-
-zstats2 <- geweke.diag(vs[-burnins,])
-pvals2 <- 2 * pnorm(abs(zstats$z), lower.tail = FALSE)
-hist2 <- hist(pvals2)
 ```
+
+These are really promising results as not a single null hypothesis needs to be discarded even at a $10\%$ confidence level.
+In the case of convergence we would expect the $p$-values to be uniformly distributed between zero and one, i.e. $p \sim \mathcal{U}(0, 1)$. We can check if this is really the case for all $\boldsymbol{u}$ and $\boldsymbol{v}$ components by plotting a $p$-value histogram for both decompositions.
+
+```{r p_values_plot, fig.fullwidth = TRUE, fig.cap = "\\label{fig:p_values_plot} Histograms for the p-values of the Geweke tests for all components of u and v."}
+par(mfcol = c(1, 2))
+u_zstats <- geweke.diag(result$u[-burnins,])$z
+u_p_values <- 2 * pnorm(abs(u_zstats), lower.tail = FALSE)
+u_histogram <- hist(u_p_values, xlab = "p-value", main = "Components of u")
+
+v_zstats <- geweke.diag(vs[-burnins,])$z
+v_p_values <- 2 * pnorm(abs(v_zstats), lower.tail = FALSE)
+v_histogram <- hist(v_p_values, xlab = "p-value", main = "Components of v")
+```
+
+As can be seen in figure \ref{fig:p_values_plot}, it is not probable that these $p$-values are *not* realizations of a uniform distribution, which indicates convergence.
