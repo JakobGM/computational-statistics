@@ -605,4 +605,4 @@ v_p_values <- 2 * pnorm(abs(v_zstats), lower.tail = FALSE)
 v_histogram <- hist(v_p_values, xlab = "p-value", main = "Components of v")
 ```
 
-As can be seen in figure \ref{fig:p_values_plot}, it is not probable that these $p$-values are *not* realizations of a uniform distribution, which indicates convergence.
+As can be seen in figure \ref{fig:p_values_plot}, nothing points to the contrary of the $p$-values being realizations of a uniform distribution. There is therefore no reason to conclude that we do not have convergence.
