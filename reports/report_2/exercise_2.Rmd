@@ -515,25 +515,32 @@ samples %>%
     color = "red"
   ) +
   facet_wrap(vars(key), scales = "free_y", ncol = 2) +
-  labs(
-    title = "Parameter burn-in trace plots",
-    caption = "Figure 3-2: Sample line plot for beginning steps of the MCMC algorithm (burn-in). The red line indicates the chosen burn-in boundary."
-  )
+  labs(title = "Parameter burn-in trace plots")
 ```
 
-From figure `3-2` it becomes clear that all the 8 chains have converged long before a thousand steps (red vertical line) have been calculated.
+\newpage
+From figure \ref{fig:burnin} it becomes clear that all the 8 chains have converged long before a thousand steps (red vertical line) have been calculated.
 $\kappa_u$ is the most extreme example beginning at $\approx 25~000$, and we have already seen that it has a calculated posterior mean of $\approx 16$, but it quickly converges to the (probably) correct domain.
 
-We can also observe from this plot that the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation, analysis of which will be coming up in the next section.
+This "zoomed in" plot also allows us to inspect the degree of movement of each chain to a better degree.
+For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation.
+The three $\boldsymbol{v}$ components show the greatest degree of variability in movement, and we would expect good results for these components in the upcoming ACF plots.
 
 ### 3b) Autocorrelation plots
 
-```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
+Now we plot the autocorrelation of each of the 8 parameters of interest.
+
+```{r acf, fig.width = 8.3, fig.height = 10, fig.fullwidth=TRUE, fig.cap = "\\label{fig:acf} Autocorrelation plots for all 8 parameters of interest."}
 par(mfrow=c(4,2))
 for (param in params) {
   acf(samples[param])
 }
 ```
+
+\newpage
+As we can see in figure \ref{fig:acf}, $\kappa_v$ has the greatest degree of autocorrelation, as predicted from the trace plots in figure \ref{fig:burnin} earlier, while $\kappa_u$ has comparatively much less autocorrelation.
+The three $\boldsymbol{v}$ components, i.e. unstructured random noise, have the lowest degree of autocorrelation, also as predicted from the previous plots.
+
  
 ### 3c) Convergence check with `geweke.diag()`
  
