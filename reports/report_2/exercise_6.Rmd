@@ -261,3 +261,36 @@ dics %>% kable(
 Models with smaller values for DIC are to be preferred over models with larger DIC.
 Based on the result from table \ref{tab:DIC} we conclude that smoking as a linear effect is the better model, with the `rw2` model close behind.
 According to the DIC heuristic, the original model without `smoking` as a covariate is the least preferred model overall.
+
+
+### Credible intervals
+
+(Credible intervals are obtained as the quantiles of the samples)
+
+[See this for example](http://www.maths.bath.ac.uk/~jjf23/brinla/intro.html)
+
+```{r}
+smoking_marginals <- nonlinear_inla_result$marginals.random$smoking
+
+smoking_summary <- nonlinear_inla_result$summary.random$smoking
+
+posterior_median <- tibble(
+  index = seq(1, 85),
+  median = smoking_summary$`0.5quant`,
+  lower = smoking_summary$`0.025quant`,
+  upper = smoking_summary$`0.975quant`
+)
+
+posterior_median %>%
+  ggplot(aes(x = index)) +
+  geom_line(
+    aes(y = median, color = "Posterior median")
+  ) +
+  geom_line(
+    aes(y = lower, color = "2.5% quantile")
+  ) +
+  geom_line(
+    aes(y = upper, color = "97.5% quantile")
+  ) +
+  scale_x_discrete()
+```
