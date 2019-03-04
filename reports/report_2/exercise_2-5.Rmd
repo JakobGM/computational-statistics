@@ -40,14 +40,14 @@ The data of interest is contained in the `Oral` dataset.
 attach(Oral)
 ```
 
-The neighbourhood structure matrix, $\boldsymbol{R}$, is provided in the data file \texttt{tma4300_ex2_Rmatrix.Rdata}.
+The neighbourhood structure matrix, $\boldsymbol{R}$, is provided in the data file `tma4300_ex2_Rmatrix.Rdata`.
 
 ```{r}
 load("data/tma4300_ex2_Rmatrix.Rdata")
 ```
 
 We will now define a list named \texttt{problem}, which will contain the global state for our problem.
-It will contain constants for our problem, such as $\yvec$, $\boldsymbol{E}$, $n$, $\boldsymbol{r}$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
+It will contain constants for our problem, such as $\yvec$, $\boldsymbol{E}$, $n$, $\boldsymbol{R}$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
 These variables will remain constant through all the iterations of the MCMC algorithm, and will be passed as the `problem` parameter to all functions.
 
 ```{r}
@@ -69,17 +69,18 @@ We start by implementing full conditional samplers for $\boldsymbol{\kappa}^{(m)
 
 ### Sampling $\boldsymbol{\kappa}^{(m)}_u$ and $\boldsymbol{\kappa}^{(m)}_v$
 
-The full conditional for $\kappa_u$ is
+$\kappa_u^{(m)}$ will be drawn from the following full conditional
 
 $$
-\kappa_u~|~\boldsymbol{y}, \kappa_v^{(m-1)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
-\sim \text{Gamma}\left(\frac{n - 1}{2} + \alpha_u, \frac{1}{2} {\boldsymbol{u}^{(m - 1)}}^{T} R \boldsymbol{u}^{(m - 1)} + \beta_u \right)
+\kappa_u^{(m)}~|~\boldsymbol{y}, \kappa_v^{(m-1)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
+\sim \text{Gamma}\left(\frac{n - 1}{2} + \alpha_u, \frac{1}{2} {\boldsymbol{u}^{(m - 1)}}^{T} \boldsymbol{R} \boldsymbol{u}^{(m - 1)} + \beta_u \right)
 $$
 
 Which can be implemented with the \texttt{rgamma} R-function.
 
 ```{r}
 draw_kappa_u <- function(u, problem) {
+  #' Return one random sample from the full conditional for kappa_u
   shape <- (problem$n - 1) / 2 + problem$alpha_u
   rate <- 0.5 * t(u) %*% problem$R %*% u + problem$beta_u
   sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
@@ -87,10 +88,10 @@ draw_kappa_u <- function(u, problem) {
 }
 ```
 
-Likewise, for $\kappa_v$ we have the full conditional
+Likewise, for $\kappa_v^{(m)}$ we draw from the full conditional
 
 $$
-\kappa_v~|~\boldsymbol{y}, \kappa_u^{(m)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
+\kappa_v^{(m)}~|~\boldsymbol{y}, \kappa_u^{(m)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
 \sim \text{Gamma}\left(\frac{n}{2} + \alpha_v, \frac{1}{2} \left(\boldsymbol{\eta}^{(m - 1)} - \boldsymbol{u}^{(m - 1)} \right)^{T} \left(\boldsymbol{\eta}^{(m - 1)} - \boldsymbol{u}^{(m - 1)} \right) + \beta_v \right),
 $$
 
@@ -98,6 +99,7 @@ Which will implemented in the same way
 
 ```{r}
 draw_kappa_v <- function(eta, u, problem) {
+  #' Return one random samplef from the full conditional for kappa_v
   shape <- problem$n / 2 + problem$alpha_v
   rate <- 0.5 * t(eta - u) %*% (eta - u) + problem$beta_v
   sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
@@ -107,19 +109,19 @@ draw_kappa_v <- function(eta, u, problem) {
 
 ### Full conditional sampler for $\uvec$
 
-The full conditional for $\boldsymbol{u}$ is
+$\boldsymbol{u}^{(m)}$ is drawn from the following full conditional distribution
 
 $$
-\boldsymbol{u}~|~\boldsymbol{\eta}^{(n - 1)}, \kappa_u^{(m)}, \kappa_v^{(m)}
+\boldsymbol{u}^{(m)}~|~\boldsymbol{\eta}^{(n - 1)}, \kappa_u^{(m)}, \kappa_v^{(m)}
 \sim
 \mathcal{N}\left(
-  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} R\right)^{-1} \kappa_v^{(m)} \boldsymbol{\eta}^{(m - 1)},~
-  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} R\right)^{-1}
+  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} \boldsymbol{R}\right)^{-1} \kappa_v^{(m)} \boldsymbol{\eta}^{(m - 1)},~
+  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} \boldsymbol{R}\right)^{-1}
 \right)
 $$
 Now, notice that the adjacency matrix $R$ is a sparse matrix. Thus, $\left(\kappa_v^{(n - 1)} I + \kappa_u^{(n - 1)} R\right)$ is also a sparse matrix.
 It is therefore preferable to store this matrix as a *sparse* matrix, using the `spam` R-library.
-Additionally, we use the `rmvnorm.canonical` function in order to formulate the normal distribution in form of the sparse *precision* matrix instead of the covariance matrix. With other words
+Additionally, we use the `rmvnorm.canonical` function in order to formulate the normal distribution in form of the sparse *precision* matrix instead of the covariance matrix. With other words,
 
 \begin{align*}
 Q \leftarrow &\kappa_v^{(m)} I + \kappa_u^{(m)} R \\
@@ -130,6 +132,7 @@ The implementation of the full conditional sampler for $\boldsymbol{u}$ therefor
 
 ```{r}
 draw_u <- function(kappa_v, kappa_u, eta, problem) {
+  #' Return one sample from the full conditional distribution of u
   Q <- diag.spam(x = kappa_v, nrow = problem$n) + kappa_u * problem$R
   b <- kappa_v * eta
   sample <- c(rmvnorm.canonical(n = 1, b = b, Q = Q))
@@ -141,7 +144,9 @@ draw_u <- function(kappa_v, kappa_u, eta, problem) {
 
 The sampling for $\boldsymbol{\eta}$ requires a Metropolis-Hastings step, since the distribution is not in a well-known form.
 
-We will draw a proposal, $\boldsymbol{\eta}^*$, from the taylor expansion $q(\boldsymbol{\eta}^* ~|~ ...)$ of $p(\boldsymbol{\eta}^* ~|~ ...)$ around $z = \boldsymbol{\eta}^{(m - 1)}$.
+#### Proposal density
+
+We will draw a proposal, $\boldsymbol{\eta}^*$, from the taylor expansion, $q(\boldsymbol{\eta}^* ~|~ ...)$, of $p(\boldsymbol{\eta}^* ~|~ ...)$ around $z = \boldsymbol{\eta}^{(m - 1)}$.
 
 $$
 q \left(
@@ -153,14 +158,15 @@ q \left(
     \kappa_u^{(m)},
     \kappa_v^{(m)}
 \right)
+\\
 \propto
 \exp \left\{
   -\frac{1}{2} {\boldsymbol{\eta}^*}^T
     \left(
-      \kappa_v^{(m)} \textbf{I} + \text{diag}(c(\boldsymbol{\eta}^{(m - 1)})) 
+      \kappa_v^{(m)} \textbf{I} + \text{diag}\left(c\left(\boldsymbol{\eta}^{(m - 1)}\right)\right) 
     \right)
     \boldsymbol{\eta}^*
-  + {\boldsymbol{\eta}^*}^T \left( \kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)}) \right)
+  + {\boldsymbol{\eta}^*}^T \left( \kappa_v^{(m)} \boldsymbol{u}^{(m)} + b\left(\boldsymbol{\eta}^{(m - 1)}\right) \right)
 \right\},
 $$
 
@@ -169,13 +175,12 @@ Again, we can use the sparse, canonical representation in the implementation
 
 \begin{align*}
   Q \leftarrow &\kappa_v^{(m)} \textbf{I} + \text{diag}(c(\boldsymbol{\eta}^{(m - 1)})) \\
-  b \leftarrow &\kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)})
+  b \leftarrow &\kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)}).
 \end{align*}
 
 So the proposal sample drawer is therefore implemented as follows
 
 ```{r}
-source("data/dmvnorm.R")
 draw_proposal_eta <- function(z, u, kappa_v, problem) {
   b <- problem$y + problem$E * exp(z) * (z - 1)
   c <- problem$E * exp(z)
@@ -184,13 +189,13 @@ draw_proposal_eta <- function(z, u, kappa_v, problem) {
   Q <- diag.spam(x = kappa_v, nrow = problem$n) + diag.spam(c)
   
   sample <- c(rmvnorm.canonical(n = 1, b = canonical_b, Q = Q))
-  logprob <- dmvnorm.canonical(x = sample, b = canonical_b, Q = Q, log = TRUE)[[1]]
-  return(list(sample = sample, logprob = logprob))
+  return(sample)
 }
 ```
 
-Here we have calculated the $\log q(\boldsymbol{\eta^*}~|~z = \boldsymbol{\eta}^{(m - 1)})$ using `dmvnorm.canonical` as implemented in the provided file \texttt{dmvnorm.R}.
-This is because it will be needed in the in the calculation for the acceptance probability $\boldsymbol{\alpha}^{(m)}$ for setting $\boldsymbol{\eta}^{(m)} \leftarrow \boldsymbol{\eta}^*$.
+#### Acceptance probability
+
+The acceptance probability, $\boldsymbol{\alpha}^{(m)}$, for setting $\boldsymbol{\eta}^{(m)} \leftarrow \boldsymbol{\eta}^*$ is as follows
 
 $$
 \boldsymbol{\alpha}^{(m)}
@@ -241,14 +246,33 @@ $$
 \right)
 $$
 
-It should be noted that these density calculations will be performed in log-space going forwards.
-
-The calculation of $\log{q(...)}$ is already handled by \texttt{draw_proposal_eta()}, but we must implement $\log{p(...)}$.
-First notice that all the conditionals are equal in both $p$ function invocations, so we need not normalize the implementation of $\log{p(...)}$ as the normality constants cancel out. The implementation is therefore as follows
+It should be noted that these density calculations, $q(...)$ and $p(...)$, will be performed in log-space going forwards.
+First, we need to implement $\log{q(\boldsymbol{\eta}~|~...)}$.
 
 ```{r}
-eta_log_density <- function(eta, kappa_v, u, problem) {
-  #' Proportional full conditional density for eta
+source("data/dmvnorm.R")
+eta_q_log_density <- function(eta, z, u, kappa_v, problem) {
+  #' Return the *proportional* full conditional log density of eta
+  #' from the Taylor expanded density function around z
+  b <- problem$y + problem$E * exp(z) * (z - 1)
+  c <- problem$E * exp(z)
+  
+  canonical_b <- kappa_v * u + b
+  Q <- diag.spam(x = kappa_v, nrow = problem$n) + diag.spam(c)
+  
+  logprob <- dmvnorm.canonical(x = eta, b = canonical_b, Q = Q, log = TRUE)[[1]]
+  return(logprob)
+}
+```
+
+Here we have calculated the $\log q(\boldsymbol{\eta^*}~|~...)$ using `dmvnorm.canonical` as implemented in the provided file `dmvnorm.R`.
+
+Now, we must implement $\log{p(\boldsymbol{\eta}~|~...)}$.
+Notice that all the conditionals are equal in both $p$ function invocations, so we need not normalize the implementation of $\log{p(...)}$ as the normality constants cancel out. The implementation is therefore as follows
+
+```{r}
+eta_p_log_density <- function(eta, kappa_v, u, problem) {
+  #' Return the proportional full conditional log density for eta
   return(
     -0.5 * t(eta) %*% diag.spam(x = kappa_v, nrow = problem$n) %*% eta
     + t(eta) %*% (kappa_v * u)
@@ -262,21 +286,34 @@ We can now implement the calculation of $\boldsymbol{\alpha}^{(m)}$.
 
 ```{r}
 acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, problem) {
-  log_p_forward <- eta_log_density(
-          eta = proposal_eta$sample,
+  #' Return the acceptance probability for going from `previous_eta` to `proposal_eta`
+  log_p_forward <- eta_p_log_density(
+          eta = proposal_eta,
           kappa_v = kappa_v,
           u = u,
           problem = problem
   )
-  log_p_backward <- eta_log_density(
-          eta = previous_eta$sample,
+  log_p_backward <- eta_p_log_density(
+          eta = previous_eta,
           kappa_v = kappa_v,
           u = u,
           problem = problem
   )
   
-  log_q_forward <- proposal_eta$logprob
-  log_q_backward <- draw_proposal_eta(z = proposal_eta$sample, u = u, kappa_v = kappa_v, problem = problem)$logprob
+  log_q_forward <- eta_q_log_density(
+    eta = proposal_eta,
+    z = previous_eta,
+    u = u,
+    kappa_v = kappa_v,
+    problem = problem
+  )
+  log_q_backward <- eta_q_log_density(
+    eta = previous_eta,
+    z = proposal_eta,
+    u = u,
+    kappa_v = kappa_v,
+    problem = problem
+  )
   
   alpha <- exp(log_p_forward + log_q_backward - log_p_backward - log_q_forward)
   
@@ -287,23 +324,29 @@ acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, probl
 }
 ```
 
+If $u < \boldsymbol{\alpha}^{(m)}$, where $u \sim \mathcal{U}(0, 1)$, we set $\boldsymbol{\eta}^{(m)} \leftarrow \boldsymbol{\eta}^{(m - 1)}$.
+
 ### Implementing the MCMC algorithm
 
-We now have all the required components required to implement the outer loop MCMC algorithm.
+Now we have all the required components required to implement the outer loop of the MCMC algorithm.
 The algorithm requires initial values for $\boldsymbol{u}^{(1)}$ and $\boldsymbol{\eta}^{(1)}$.
-We will set (rather arbitrarily) $\boldsymbol{u}^{(1)} = \vec{0}$, while setting the value of $\boldsymbol{\eta}^{(0)}$ by sampling our proposal density $q(...)$ with the following parameters
+We will set (rather arbitrarily) $\boldsymbol{u}^{(1)} = \vec{0}$, while setting the value of $\boldsymbol{\eta}^{(1)}$ by sampling our proposal density $q(...)$ with the following parameters
 
 \begin{align*}
   \boldsymbol{z} \leftarrow& \vec{0} \\
   \boldsymbol{u} \leftarrow& \vec{0} \\
-  \kappa_v \leftarrow& 500
+  \kappa_v \leftarrow& 180
 \end{align*}
 
 ```{r, cache = TRUE}
 MCMC <- function(steps, problem) {
+  #' Run MCMC algorithm with number of steps = `steps`
+  #' Returns a list of sampled values for: kappa_u, kappa_v, u, eta
+  #' Additionally, the acceptance probabilities and time used is returned
+  
   # Initial guess for parameters u and eta
   u <- c(rep_len(0.0, problem$n))
-  eta <- draw_proposal_eta(z = u, u = u, kappa_v = 500, problem = problem)
+  eta <- draw_proposal_eta(z = u, u = u, kappa_v = 180, problem = problem)
   
   # Data structures for saving sample results
   kappa_us <- vector()
@@ -317,14 +360,14 @@ MCMC <- function(steps, problem) {
   
   for (i in seq(1, steps)) {
     kappa_u <- draw_kappa_u(u = u, problem = problem)
-    kappa_v <- draw_kappa_v(eta = eta$sample, u = u, problem = problem)
-    u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample, problem = problem)
+    kappa_v <- draw_kappa_v(eta = eta, u = u, problem = problem)
+    u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta, problem = problem)
     
     proposal_eta <- draw_proposal_eta(
-            z = eta$sample,
-            u = u,
-            kappa_v = kappa_v,
-            problem = problem
+      z = eta,
+      u = u,
+      kappa_v = kappa_v,
+      problem = problem
     )
     alpha <- acceptance_probability(
       proposal_eta = proposal_eta,
@@ -342,7 +385,7 @@ MCMC <- function(steps, problem) {
     kappa_vs <- c(kappa_vs, kappa_v)
     alphas <- c(alphas, alpha)
     us[i,] = u
-    etas[i,] = eta$sample
+    etas[i,] = eta
   }
   
   # Calculate the time used by the MCMC algorithm
@@ -364,6 +407,9 @@ MCMC <- function(steps, problem) {
 }
 ```
 
+
+### Running the MCMC sampler
+
 A posterior sample size of $M = 70~000$, after having a burn-in period of $1000$ steps, is sampled.
 We will see shortly that this burn-in period is more than sufficient.
 
@@ -374,17 +420,20 @@ burnin <- 1000
 result <- MCMC(steps = M + burnin, problem = problem)
 ```
 
-```{r, show = FALSE, eval = FALSE}
+```{r, include = FALSE, eval = FALSE}
 # Run this line if it is the first time you have executed MCMC and want to save the result
 save(result, list = c("result"), file = "data/MCMC_result.Rdata")
 ```
 
-```{r, show = FALSE}
+```{r, include = FALSE}
 # Load the saved result for `result`
 M <- 70000
 burnin <- 1000
 load(file = "data/MCMC_result.Rdata")
 ```
+
+For reproducability, a specific run is cached and available for download at [http://folk.ntnu.no/jakobgm/MCMC_result.Rdata](http://folk.ntnu.no/jakobgm/MCMC_result.Rdata).
+This is the data that will be analyzed in the upcoming sections.
 
 #### Time usage
 
@@ -394,14 +443,14 @@ The time used by the algorithm is part of the returned result.
 result$time_used
 ```
 
-$71~000$ iterations of the algorithm uses approximately 10 minutes, which implies the following time usage per iteration
+$71~000$ iterations of the algorithm uses approximately 9 minutes and 20 seconds, which results in the following time usage per iteration
 
 ```{r}
 milliseconds <- 1000 * 60 * as.numeric(result$time_used_per_step)
 sprintf("~%1.1fms per iteration", milliseconds)
 ```
 
-I.e., $\propto 8.6$ milliseconds per iteration, each iteration creating $2n + 3 = 1091$ double data points.
+I.e., $\propto 7.9$ milliseconds per iteration, each iteration creating $2n + 3 = 1091$ double float data points.
 
 #### Acceptance rates
 
@@ -412,36 +461,27 @@ alpha <- result$alpha[-c(1:burnin)]
 mean(alpha)
 ```
 
-The acceptance probability is, on average, approximately $50\%$.
+The acceptance probability is, on average, approximately $74\%$.
 A more interesting overview of the distribution of $\alpha^{(m)}$ can be observed by plotting a histogram.
 
-```{r}
+```{r, fig.cap = "\\label{fig:alphas} The distribution of alpha values for all the post-burn-in acceptance probabilities. Vertical red line indicates the mean acceptance probability."}
 binwidth <- 0.04
 enframe(alpha) %>%
-  ggplot() +
-  aes(x = value) +
+  ggplot(aes(x = value)) +
   geom_histogram(
     aes(y = binwidth * ..density..),
     boundary = 0,
     breaks = seq(0.0, 1.0, by = binwidth)
   ) +
+  geom_vline(aes(xintercept = mean(alpha), color="alpha mean")) +
   ylab("frequency") +
   xlab(expression(alpha)) +
-  labs(
-    title = "Histogram of calculated acceptance probabilities",
-    caption = "The distribution of alpha values for all the post-burn-in acceptance probabilities"
-  )
+  labs(title = "Histogram of calculated acceptance probabilities")
 ```
 
-As you can see from the histogram for $\boldsymbol{\alpha}$, most values for $\alpha$ are either close to or equal to $0$ or $1$.
-This is the reason for the $\alpha$ mean being $\approx 0.5$. Half of the proposals are almost guaranteed to be accepted, while the other half is almost guaranteed not to. We can calculate the fraction of the acceptance probabilities that can be considered extreme, let's say $\alpha \notin [0.01, 0.99]$.
-
-```{r}
-extreme_values_count <- length(alpha[alpha < 0.01]) + length(alpha[alpha > 0.99])
-extreme_values_count / length(alpha)
-```
-
-$\approx 92\%$ of the proposals are of that nature!
+As can be seen the histogram in figure \ref{fig:alphas}, most of the acceptance probabilities are very close to $1$.
+The remaining acceptance probabilities gradually decline in density towards $0$.
+This is considered to be a relatively good result, since a sufficient amount of proposal samples are expected to be accepted.
 
 # Exercise 3 - Convergence diagnostics
 
@@ -458,8 +498,8 @@ We will investigate the precision parameters $\kappa_u$ and $\kappa_v$ in additi
 samples <- tibble(
   step = seq(1, burnin + M),
   kappa_u = result$kappa_u, kappa_v = result$kappa_v,
-  u_1 = result$u[, 80], u_2 = result$u[, 360], u_3 = result$u[, 500],
-  v_1 = vs[, 80], v_2 = vs[, 360], v_3 = vs[, 500]
+  u_80 = result$u[, 80], u_360 = result$u[, 360], u_500 = result$u[, 500],
+  v_80 = vs[, 80], v_360 = vs[, 360], v_500 = vs[, 500]
 )
 params <- colnames(samples)[-1]
 ```
@@ -470,7 +510,7 @@ params <- colnames(samples)[-1]
 
 First, we will plot the trace plots for all the chosen sample parameters, with the burn-in period removed.
 
-```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
+```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE, fig.cap = "\\label{fig:trace_plots} Sample line plot for each step of the MCMC algorithm (post-burn-in)"}
 burnins <- seq(1, burnin)
 samples %>%
   slice(-burnins) %>%
@@ -478,26 +518,33 @@ samples %>%
   ggplot(aes(x = step)) +
   geom_line(aes(y = value)) +
   facet_wrap(vars(key), scales = "free_y", ncol = 2) +
-  labs(
-    title = "Parameter trace plots",
-    caption = "Figure 3-1: Sample line plot for each step of the MCMC algorithm (post-burn-in)"
-  )
+  labs(title = "Parameter trace plots")
 ```
 
-By observing figure `3-1`, we can observe that all 8 parameters portray a "band-like" shape, which is a good indication for convergence.
-Additionally, there is no indication of the parameters becoming "stuck" at any point during the iterations.
-The samples of the three $\boldsymbol{v}$-components seem to be symmetrically distributed around $0$, which is what we would expect to see from these unstructured white-noise parameters. The post-burn-in posterior means can be calculated in order to confirm this
+By observing figure \ref{fig:trace_plots}, we can observe that all 8 parameters portray a "band-like" shape, which is a good indication for convergence.
+Additionally, there is no indication of the parameters becoming "stuck" at any point during the iterations, and the chains mixes properly.
+The samples of the three $\boldsymbol{v}$-components seem to be symmetrically distributed around $0$, which is what we would expect to see from these unstructured white-noise parameters.
+
+#### Posterior means
+
+The post-burn-in posterior means can be calculated
 
 ```{r}
 library(kableExtra)
-samples[,-1] %>% slice(-burnins) %>% colMeans() %>% kable()
+samples[,-1] %>%
+  slice(-burnins) %>%
+  colMeans() %>%
+  kable(
+    col.names = c("Posterior mean"),
+    caption = "\\label{tab:posterior_means}Posterior means for the eight parameters of interest."
+  )
 ```
 
-Nothing out of the ordinary here to indicate something wrong with the implementation.
+These values can be compared to the burn-in trace plots in the upcoming section.
 
 #### burn-in period
 
-Lastly, let's justify our earlier assumption of a burn-in period of $1~000$ steps being more than sufficient.
+Let's try to justify our earlier assumption of a burn-in period of $1~000$ steps being more than sufficient.
 We will plot trace plots for the first $2~000$ steps.
 
 ```{r, fig.width = 8.3, fig.height = 8, fig.fullwidth=TRUE, fig.cap = "\\label{fig:burnin} Sample line plot for beginning steps of the MCMC algorithm (burn-in). The red line indicates the chosen burn-in boundary."}
@@ -507,20 +554,17 @@ samples %>%
   gather(key, value, params) %>%
   ggplot(aes(x = step)) +
   geom_line(aes(y = value)) +
-  geom_vline(
-    xintercept = burnin,
-    color = "red"
-  ) +
+  geom_vline(xintercept = burnin, color = "red") +
   facet_wrap(vars(key), scales = "free_y", ncol = 2) +
   labs(title = "Parameter burn-in trace plots")
 ```
 
 \newpage
 From figure \ref{fig:burnin} it becomes clear that all the 8 chains have converged long before a thousand steps (red vertical line) have been calculated.
-$\kappa_u$ is the most extreme example beginning at $\approx 25~000$, and we have already seen that it has a calculated posterior mean of $\approx 16$, but it quickly converges to the (probably) correct domain.
+$\kappa_u$ is the most extreme example beginning at $\sim 25~000$, and as can be seen in table \ref{tab:posterior_means}, $\kappa_u$ has a posterior mean of $\sim 17$, but it quickly converges to the likely correct domain.
 
 This "zoomed in" plot also allows us to inspect the degree of movement of each chain to a better degree.
-For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation.
+For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation compared to the other parameters.
 The three $\boldsymbol{v}$ components show the greatest degree of variability in movement, and we would expect good results for these components in the upcoming ACF plots.
 
 ### 3b) Autocorrelation plots
@@ -539,10 +583,10 @@ for (param in params) {
 As we can see in figure \ref{fig:acf}, $\kappa_v$ and $\kappa_u$ show the greatest degree of autocorrelation, as predicted from the trace plots in figure \ref{fig:burnin} earlier. We can investigate this in more detail by plotting the ACF for $\kappa_v$ with a larger displayed lag.
 
 ```{r acf_kappa_u, fig.cap = "\\label{fig:acf_kappa_u} Autocorrelation function plot for kappa_u with max lag set to 200."}
-acf(usable_samples["kappa_u"], lag.max = 200)
+acf(usable_samples["kappa_u"], lag.max = 150)
 ```
 
-As can be seen in figure \ref{fig:acf_kappa_u}, a lag of $\approx 200$ is required before two samples can be considered independent of each other. This autocorrelation must be remedied by generating a sufficient amount of samples, as it reduces our effective number of samples.
+As can be seen in figure \ref{fig:acf_kappa_u}, a lag of $\sim 150$ is required before two samples can be considered independent of each other. This autocorrelation must be remedied by generating a sufficient amount of samples, as it reduces our effective number of samples.
 
 The three $\boldsymbol{v}$ components in figure \ref{fig:acf}, i.e. unstructured random noise, have the lowest degree of autocorrelation, also as predicted from the previous plots.
 
@@ -592,10 +636,11 @@ geweke_results <- tibble(
   z_statistic = z_statistics,
   p_value = p_values
 )
-geweke_results %>% kable()
+geweke_results %>%
+  kable(caption = "\\label{tab:geweke} The Z-statistic and corresponding p-values for the Geweke test on the eight parameters of interest.")
 ```
 
-These are really promising results as not a single null hypothesis needs to be discarded even at a $10\%$ confidence level.
+The results in table \ref{tab:geweke} are really promisising, as not a single null hypothesis needs to be discarded even at a $10\%$ confidence level.
 In the case of convergence we would expect the $p$-values to be uniformly distributed between zero and one, i.e. $p \sim \mathcal{U}(0, 1)$. We can check if this is really the case for all $\boldsymbol{u}$ and $\boldsymbol{v}$ components by plotting a $p$-value histogram for both decompositions.
 
 ```{r p_values_plot, fig.fullwidth = TRUE, fig.cap = "\\label{fig:p_values_plot} Histograms for the p-values of the Geweke tests for all components of u and v."}
@@ -645,13 +690,16 @@ The \texttt{effectiveSize()} function from the \texttt{coda} R-library can be us
 
 ```{r}
 ESS <- effectiveSize(usable_samples)
-ESS[c("kappa_u", "kappa_v")]
+ESS %>%
+  kable(
+    caption = "\\label{tab:ESS}Effective number of samples for our 8 paramaters of interest."
+  )
 ```
 
-What does this imply?
-It is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $766$ and $663$ samples, respectively, in order to obtain parameter estimates with the same precision as if we used our MCMC samples of size $70~000$. This is approximately $1\%$.
+What does table \ref{tab:ESS} imply?
+It is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $1156$ and $626$ samples, respectively, in order to obtain parameter estimates with the *same* precision as if we used our MCMC samples of size $70~000$. This is less than $2\%$ of the MCMC sample size, $M$.
 
-With other words, an independent sampler that runs 100 times as slow as our MCMC implementation would therefore be of approximately equal benefit as our MCMC implementation, not considering memory usage and burn-in periods.
+With other words, an independent sampler that runs 50 times as slow as our MCMC implementation would therefore be of approximately equal benefit as our MCMC implementation, not considering memory usage and burn-in periods.
 
 ### Possible improvements for the ESS values
 
@@ -673,11 +721,11 @@ We can also calculate the \textit{relative} ESS by dividing the mean ESS by the 
 
 ```{r}
 seconds_used <- 60 * as.numeric(result$time_used)
-relative_ESS <- mean(ESS[c("kappa_u", "kappa_v")]) / seconds_used
+relative_ESS <- mean(ESS) / seconds_used
 sprintf("%1.3f effective samples per second", relative_ESS)
 ```
 
-Our implementation generates $\approx 1.16$ effective samples per second.
+Our implementation generates $\sim 27$ effective samples per second.
 
 ### Interpretation
 
