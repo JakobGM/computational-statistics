@@ -443,14 +443,14 @@ The time used by the algorithm is part of the returned result.
 result$time_used
 ```
 
-$71~000$ iterations of the algorithm uses approximately 10 minutes, which implies the following time usage per iteration
+$71~000$ iterations of the algorithm uses approximately 9 minutes and 20 seconds, which results in the following time usage per iteration
 
 ```{r}
 milliseconds <- 1000 * 60 * as.numeric(result$time_used_per_step)
 sprintf("~%1.1fms per iteration", milliseconds)
 ```
 
-I.e., $\propto 8.6$ milliseconds per iteration, each iteration creating $2n + 3 = 1091$ double data points.
+I.e., $\propto 7.9$ milliseconds per iteration, each iteration creating $2n + 3 = 1091$ double float data points.
 
 #### Acceptance rates
 
@@ -461,36 +461,27 @@ alpha <- result$alpha[-c(1:burnin)]
 mean(alpha)
 ```
 
-The acceptance probability is, on average, approximately $50\%$.
+The acceptance probability is, on average, approximately $74\%$.
 A more interesting overview of the distribution of $\alpha^{(m)}$ can be observed by plotting a histogram.
 
-```{r}
+```{r, fig.cap = "\\label{fig:alphas} The distribution of alpha values for all the post-burn-in acceptance probabilities. Vertical red line indicates the mean acceptance probability."}
 binwidth <- 0.04
 enframe(alpha) %>%
-  ggplot() +
-  aes(x = value) +
+  ggplot(aes(x = value)) +
   geom_histogram(
     aes(y = binwidth * ..density..),
     boundary = 0,
     breaks = seq(0.0, 1.0, by = binwidth)
   ) +
+  geom_vline(aes(xintercept = mean(alpha), color="alpha mean")) +
   ylab("frequency") +
   xlab(expression(alpha)) +
-  labs(
-    title = "Histogram of calculated acceptance probabilities",
-    caption = "The distribution of alpha values for all the post-burn-in acceptance probabilities"
-  )
+  labs(title = "Histogram of calculated acceptance probabilities")
 ```
 
-As you can see from the histogram for $\boldsymbol{\alpha}$, most values for $\alpha$ are either close to or equal to $0$ or $1$.
-This is the reason for the $\alpha$ mean being $\approx 0.5$. Half of the proposals are almost guaranteed to be accepted, while the other half is almost guaranteed not to. We can calculate the fraction of the acceptance probabilities that can be considered extreme, let's say $\alpha \notin [0.01, 0.99]$.
-
-```{r}
-extreme_values_count <- length(alpha[alpha < 0.01]) + length(alpha[alpha > 0.99])
-extreme_values_count / length(alpha)
-```
-
-$\approx 92\%$ of the proposals are of that nature!
+As can be seen the histogram in figure \ref{fig:alphas}, most of the acceptance probabilities are very close to $1$.
+The remaining acceptance probabilities gradually decline in density towards $0$.
+This is considered to be a relatively good result, since a sufficient amount of proposal samples are expected to be accepted.
 
 # Exercise 3 - Convergence diagnostics
 
@@ -507,8 +498,8 @@ We will investigate the precision parameters $\kappa_u$ and $\kappa_v$ in additi
 samples <- tibble(
   step = seq(1, burnin + M),
   kappa_u = result$kappa_u, kappa_v = result$kappa_v,
-  u_1 = result$u[, 80], u_2 = result$u[, 360], u_3 = result$u[, 500],
-  v_1 = vs[, 80], v_2 = vs[, 360], v_3 = vs[, 500]
+  u_80 = result$u[, 80], u_360 = result$u[, 360], u_500 = result$u[, 500],
+  v_80 = vs[, 80], v_360 = vs[, 360], v_500 = vs[, 500]
 )
 params <- colnames(samples)[-1]
 ```
@@ -519,7 +510,7 @@ params <- colnames(samples)[-1]
 
 First, we will plot the trace plots for all the chosen sample parameters, with the burn-in period removed.
 
-```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE}
+```{r, fig.width = 8.3, fig.height = 11.7, fig.fullwidth=TRUE, fig.cap = "\\label{fig:trace_plots} Sample line plot for each step of the MCMC algorithm (post-burn-in)"}
 burnins <- seq(1, burnin)
 samples %>%
   slice(-burnins) %>%
@@ -527,26 +518,33 @@ samples %>%
   ggplot(aes(x = step)) +
   geom_line(aes(y = value)) +
   facet_wrap(vars(key), scales = "free_y", ncol = 2) +
-  labs(
-    title = "Parameter trace plots",
-    caption = "Figure 3-1: Sample line plot for each step of the MCMC algorithm (post-burn-in)"
-  )
+  labs(title = "Parameter trace plots")
 ```
 
-By observing figure `3-1`, we can observe that all 8 parameters portray a "band-like" shape, which is a good indication for convergence.
-Additionally, there is no indication of the parameters becoming "stuck" at any point during the iterations.
-The samples of the three $\boldsymbol{v}$-components seem to be symmetrically distributed around $0$, which is what we would expect to see from these unstructured white-noise parameters. The post-burn-in posterior means can be calculated in order to confirm this
+By observing figure \ref{fig:trace_plots}, we can observe that all 8 parameters portray a "band-like" shape, which is a good indication for convergence.
+Additionally, there is no indication of the parameters becoming "stuck" at any point during the iterations, and the chains mixes properly.
+The samples of the three $\boldsymbol{v}$-components seem to be symmetrically distributed around $0$, which is what we would expect to see from these unstructured white-noise parameters.
+
+#### Posterior means
+
+The post-burn-in posterior means can be calculated
 
 ```{r}
 library(kableExtra)
-samples[,-1] %>% slice(-burnins) %>% colMeans() %>% kable()
+samples[,-1] %>%
+  slice(-burnins) %>%
+  colMeans() %>%
+  kable(
+    col.names = c("Posterior mean"),
+    caption = "\\label{tab:posterior_means}Posterior means for the eight parameters of interest."
+  )
 ```
 
-Nothing out of the ordinary here to indicate something wrong with the implementation.
+These values can be compared to the burn-in trace plots in the upcoming section.
 
 #### burn-in period
 
-Lastly, let's justify our earlier assumption of a burn-in period of $1~000$ steps being more than sufficient.
+Let's try to justify our earlier assumption of a burn-in period of $1~000$ steps being more than sufficient.
 We will plot trace plots for the first $2~000$ steps.
 
 ```{r, fig.width = 8.3, fig.height = 8, fig.fullwidth=TRUE, fig.cap = "\\label{fig:burnin} Sample line plot for beginning steps of the MCMC algorithm (burn-in). The red line indicates the chosen burn-in boundary."}
@@ -556,20 +554,17 @@ samples %>%
   gather(key, value, params) %>%
   ggplot(aes(x = step)) +
   geom_line(aes(y = value)) +
-  geom_vline(
-    xintercept = burnin,
-    color = "red"
-  ) +
+  geom_vline(xintercept = burnin, color = "red") +
   facet_wrap(vars(key), scales = "free_y", ncol = 2) +
   labs(title = "Parameter burn-in trace plots")
 ```
 
 \newpage
 From figure \ref{fig:burnin} it becomes clear that all the 8 chains have converged long before a thousand steps (red vertical line) have been calculated.
-$\kappa_u$ is the most extreme example beginning at $\approx 25~000$, and we have already seen that it has a calculated posterior mean of $\approx 16$, but it quickly converges to the (probably) correct domain.
+$\kappa_u$ is the most extreme example beginning at $\sim 25~000$, and as can be seen in table \ref{tab:posterior_means}, $\kappa_u$ has a posterior mean of $\sim 17$, but it quickly converges to the likely correct domain.
 
 This "zoomed in" plot also allows us to inspect the degree of movement of each chain to a better degree.
-For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation.
+For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation compared to the other parameters.
 The three $\boldsymbol{v}$ components show the greatest degree of variability in movement, and we would expect good results for these components in the upcoming ACF plots.
 
 ### 3b) Autocorrelation plots
@@ -588,10 +583,10 @@ for (param in params) {
 As we can see in figure \ref{fig:acf}, $\kappa_v$ and $\kappa_u$ show the greatest degree of autocorrelation, as predicted from the trace plots in figure \ref{fig:burnin} earlier. We can investigate this in more detail by plotting the ACF for $\kappa_v$ with a larger displayed lag.
 
 ```{r acf_kappa_u, fig.cap = "\\label{fig:acf_kappa_u} Autocorrelation function plot for kappa_u with max lag set to 200."}
-acf(usable_samples["kappa_u"], lag.max = 200)
+acf(usable_samples["kappa_u"], lag.max = 150)
 ```
 
-As can be seen in figure \ref{fig:acf_kappa_u}, a lag of $\approx 200$ is required before two samples can be considered independent of each other. This autocorrelation must be remedied by generating a sufficient amount of samples, as it reduces our effective number of samples.
+As can be seen in figure \ref{fig:acf_kappa_u}, a lag of $\sim 150$ is required before two samples can be considered independent of each other. This autocorrelation must be remedied by generating a sufficient amount of samples, as it reduces our effective number of samples.
 
 The three $\boldsymbol{v}$ components in figure \ref{fig:acf}, i.e. unstructured random noise, have the lowest degree of autocorrelation, also as predicted from the previous plots.
 
@@ -641,10 +636,11 @@ geweke_results <- tibble(
   z_statistic = z_statistics,
   p_value = p_values
 )
-geweke_results %>% kable()
+geweke_results %>%
+  kable(caption = "\\label{tab:geweke} The Z-statistic and corresponding p-values for the Geweke test on the eight parameters of interest.")
 ```
 
-These are really promising results as not a single null hypothesis needs to be discarded even at a $10\%$ confidence level.
+The results in table \ref{tab:geweke} are really promisising, as not a single null hypothesis needs to be discarded even at a $10\%$ confidence level.
 In the case of convergence we would expect the $p$-values to be uniformly distributed between zero and one, i.e. $p \sim \mathcal{U}(0, 1)$. We can check if this is really the case for all $\boldsymbol{u}$ and $\boldsymbol{v}$ components by plotting a $p$-value histogram for both decompositions.
 
 ```{r p_values_plot, fig.fullwidth = TRUE, fig.cap = "\\label{fig:p_values_plot} Histograms for the p-values of the Geweke tests for all components of u and v."}
