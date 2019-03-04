@@ -5,6 +5,7 @@ output:
   html_document:
     fig_caption: yes
 ---
+
 # Exercise 6 - Comparison to `INLA` and inclusion of covariate information
 
 ## a) Implementation in `R-INLA`
@@ -34,7 +35,7 @@ formula <- Y ~
   f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
   f(region_random, model = "iid", hyper = kappa_v_hyper)
 
-result <- inla(
+inla_result <- inla(
   formula = formula,
   family = "poisson",
   data = data,
@@ -42,27 +43,77 @@ result <- inla(
   verbose = FALSE,
   control.compute = list(dic = TRUE)
 )
-result <- inla.hyperpar(result)
+inla_result <- inla.hyperpar(inla_result)
 
-inla_u <- result$summary.random$region_structured
-inla_v <- result$summary.random$region_random
+uv_marginals <- inla_result$marginals.random
+inla_u <- uv_marginals$region_structured
+inla_v <- uv_marginals$region_random
 
-marginals <- result$marginals.hyperpar
+marginals <- inla_result$marginals.hyperpar
 inla_kappa_u <- marginals$`Precision for region_structured`
 inla_kappa_v <- marginals$`Precision for region_random`
 
-inla_kappa_u_smoothed <- inla.smarginal(inla_kappa_u)
-inla_kappa_v_smoothed <- inla.smarginal(inla_kappa_v)
+inla_kappa_u_smoothed <- as_tibble(inla_kappa_u)
+inla_kappa_v_smoothed <- as_tibble(inla_kappa_v)
+```
 
-kappa_u_data <- as_tibble(inla_kappa_u_smoothed)
-kappa_u_plot <- kappa_u_data %>%
-  ggplot(aes(x = x, y = y)) +
-  geom_line()
+```{r}
+binwidth = 0.3
+usable_samples %>%
+  ggplot() +
+  geom_histogram(
+    aes(x = kappa_u, y = ..density..),
+    binwidth = binwidth
+  ) +
+  geom_line(
+    data = inla_kappa_u_smoothed,
+    aes(x = x, y = y)
+  )
 
-kappa_v_data <- as_tibble(inla_kappa_v_smoothed)
-kappa_v_plot <- kappa_v_data %>%
-  ggplot(aes(x = x, y = y)) +
-  geom_line()
+binwidth = 0.3
+usable_samples %>%
+  ggplot() +
+  geom_histogram(
+    aes(x = kappa_v, y = ..density..),
+    binwidth = binwidth
+  ) +
+  geom_line(
+    data = inla_kappa_v_smoothed,
+    aes(x = x, y = y)
+  )
+
+binwidth = 0.001
+inla_u_1 <- data.frame(inla_u[[80]])
+param <- "u_1"
+usable_samples %>%
+  ggplot() +
+  geom_histogram(
+    aes_string(x = param, y = "..density.."),
+    binwidth = binwidth
+  ) +
+  geom_line(
+    data = inla_u_1,
+    aes(x = x, y = y)
+  )
+```
+
+```{r inla_germany, fig.cap = "\\label{fig:inla_germany} A comparison between MCMC and INLA, specifically the spatially structured effect $\exp(\hat{u}_i)$. The MCMC result is portrayed on the left hand side, while INLA's result is portrayed on the right hand side."}
+inla_exp_u_median <- inla_u$`0.5quant` %>% exp() %>% as_vector()
+par(mfcol=c(1, 2))
+germany.plot(
+  exp_u_median,
+  col=col,
+  legend=TRUE,
+  main = bquote("MCMC"),
+  cex.mai = 1.5
+)
+germany.plot(
+  inla_exp_u_median,
+  col=col,
+  legend=TRUE,
+  main = bquote("INLA"),
+  cex.mai = 1.5
+)
 ```
 
 ## b) Smoking as new covariate
@@ -77,7 +128,7 @@ linear_smoking_formula <- Y ~
   f(region_random, model = "iid", hyper = kappa_v_hyper) +
   smoking
 
-linear_result <- inla(
+linear_inla_result <- inla(
   formula = linear_smoking_formula,
   family = "poisson",
   data = data,
@@ -91,7 +142,7 @@ nonlinear_smoking_formula <- Y ~
   f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
   f(region_random, model = "iid", hyper = kappa_v_hyper) +
   f(smoking, model = "rw2")
-nonlinear_result <- inla(
+nonlinear_inla_result <- inla(
   formula = nonlinear_smoking_formula,
   family = "poisson",
   data = data,
