@@ -57,49 +57,55 @@ inla_kappa_u_smoothed <- as_tibble(inla_kappa_u)
 inla_kappa_v_smoothed <- as_tibble(inla_kappa_v)
 ```
 
-```{r}
-binwidth = 0.3
-usable_samples %>%
-  ggplot() +
-  geom_histogram(
-    aes(x = kappa_u, y = ..density..),
-    binwidth = binwidth
-  ) +
-  geom_line(
-    data = inla_kappa_u_smoothed,
-    aes(x = x, y = y)
-  )
+```{r, fig.width = 8.3, fig.height = 9, fig.fullwidth=TRUE, fig.cap = "\\label{fig:marginals}Plots comparing the posterior marginals obtained by INLA, drawn in red, to histograms of the MCMC-samples, drawn in grey. The y-axis is normalized such that both integrate to 1. First column shows u-components, second column the v-components, while the third shows $\kappa_u$ and $\kappa_v$."}
+plot_marginal <- function(param, marginal, binwidth) {
+  #' Plot histogram of MCMC samples on top of posterior marginals
+  #' obtained from INLA.
+  param_samples <- usable_samples %>% pull(param)
+  min_x <- min(param_samples)
+  max_x <- max(param_samples)
+  
+  plot <- usable_samples %>%
+    ggplot() +
+    geom_histogram(
+      aes_string(x = param, y = "..density.."),
+      binwidth = binwidth
+    ) +
+    geom_line(
+      data = data.frame(marginal),
+      aes(x = x, y = y),
+      color = "red"
+    ) +
+    xlim(min_x, max_x) +
+    labs(title = param, x = "", y = "")
+  return(plot)
+}
 
-binwidth = 0.3
-usable_samples %>%
-  ggplot() +
-  geom_histogram(
-    aes(x = kappa_v, y = ..density..),
-    binwidth = binwidth
-  ) +
-  geom_line(
-    data = inla_kappa_v_smoothed,
-    aes(x = x, y = y)
-  )
+plots <- list(
+  # u-components
+  plot_marginal("u_80", inla_u[[80]], 0.01),
+  plot_marginal("u_360", inla_u[[360]], 0.01),
+  plot_marginal("u_500", inla_u[[500]], 0.01),
+  # v-components
+  plot_marginal("v_80", inla_v[[80]], 0.01),
+  plot_marginal("v_360", inla_v[[360]], 0.01),
+  plot_marginal("v_500", inla_v[[500]], 0.01),
+  # kappas
+  plot_marginal("kappa_u", inla_kappa_u, 0.4),
+  plot_marginal("kappa_v", inla_kappa_v, 5)
+)
 
-binwidth = 0.001
-inla_u_1 <- data.frame(inla_u[[80]])
-param <- "u_1"
-usable_samples %>%
-  ggplot() +
-  geom_histogram(
-    aes_string(x = param, y = "..density.."),
-    binwidth = binwidth
-  ) +
-  geom_line(
-    data = inla_u_1,
-    aes(x = x, y = y)
-  )
+library(gridExtra)
+layout <- rbind(
+  c(1, 4, 7), c(1, 4, 7), c(2, 5, 7),
+  c(2, 5, 8), c(3, 6, 8), c(3, 6, 8)
+)
+grid.arrange(grobs = plots, layout_matrix = layout, left = "density", bottom = "parameter value")
 ```
 
-{r inla_germany, fig.cap = "\\label{fig:inla_germany} A comparison between MCMC and INLA, specifically the spatially structured effect $\exp(\hat{u}_i)$. The MCMC result is portrayed on the left hand side, while INLA's result is portrayed on the right hand side."}
+A comparison between MCMC and INLA, specifically the spatially structured effect $\exp(\hat{u}_i)$. The MCMC result is portrayed on the left hand side, while INLA's result is portrayed on the right hand side."}
 
-```{r}
+```{r, fig.cap = "\\label{fig:inla_germany"}
 uv_summaries <- inla_result$summary.random
 u_summary <- uv_summaries$region_structured
 inla_exp_u_median <- u_summary$`0.5quant` %>% exp() %>% as_vector()
