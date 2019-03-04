@@ -40,14 +40,14 @@ The data of interest is contained in the `Oral` dataset.
 attach(Oral)
 ```
 
-The neighbourhood structure matrix, $\boldsymbol{R}$, is provided in the data file \texttt{tma4300_ex2_Rmatrix.Rdata}.
+The neighbourhood structure matrix, $\boldsymbol{R}$, is provided in the data file `tma4300_ex2_Rmatrix.Rdata`.
 
 ```{r}
 load("data/tma4300_ex2_Rmatrix.Rdata")
 ```
 
 We will now define a list named \texttt{problem}, which will contain the global state for our problem.
-It will contain constants for our problem, such as $\yvec$, $\boldsymbol{E}$, $n$, $\boldsymbol{r}$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
+It will contain constants for our problem, such as $\yvec$, $\boldsymbol{E}$, $n$, $\boldsymbol{R}$, $\alpha_u$, $\alpha_v$, $\beta_u$, and $\beta_v$.
 These variables will remain constant through all the iterations of the MCMC algorithm, and will be passed as the `problem` parameter to all functions.
 
 ```{r}
@@ -69,17 +69,18 @@ We start by implementing full conditional samplers for $\boldsymbol{\kappa}^{(m)
 
 ### Sampling $\boldsymbol{\kappa}^{(m)}_u$ and $\boldsymbol{\kappa}^{(m)}_v$
 
-The full conditional for $\kappa_u$ is
+$\kappa_u^{(m)}$ will be drawn from the following full conditional
 
 $$
-\kappa_u~|~\boldsymbol{y}, \kappa_v^{(m-1)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
-\sim \text{Gamma}\left(\frac{n - 1}{2} + \alpha_u, \frac{1}{2} {\boldsymbol{u}^{(m - 1)}}^{T} R \boldsymbol{u}^{(m - 1)} + \beta_u \right)
+\kappa_u^{(m)}~|~\boldsymbol{y}, \kappa_v^{(m-1)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
+\sim \text{Gamma}\left(\frac{n - 1}{2} + \alpha_u, \frac{1}{2} {\boldsymbol{u}^{(m - 1)}}^{T} \boldsymbol{R} \boldsymbol{u}^{(m - 1)} + \beta_u \right)
 $$
 
 Which can be implemented with the \texttt{rgamma} R-function.
 
 ```{r}
 draw_kappa_u <- function(u, problem) {
+  #' Return one random sample from the full conditional for kappa_u
   shape <- (problem$n - 1) / 2 + problem$alpha_u
   rate <- 0.5 * t(u) %*% problem$R %*% u + problem$beta_u
   sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
@@ -87,10 +88,10 @@ draw_kappa_u <- function(u, problem) {
 }
 ```
 
-Likewise, for $\kappa_v$ we have the full conditional
+Likewise, for $\kappa_v^{(m)}$ we draw from the full conditional
 
 $$
-\kappa_v~|~\boldsymbol{y}, \kappa_u^{(m)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
+\kappa_v^{(m)}~|~\boldsymbol{y}, \kappa_u^{(m)}, \boldsymbol{\eta}^{(m - 1)}, \boldsymbol{u}^{(m -  1)}
 \sim \text{Gamma}\left(\frac{n}{2} + \alpha_v, \frac{1}{2} \left(\boldsymbol{\eta}^{(m - 1)} - \boldsymbol{u}^{(m - 1)} \right)^{T} \left(\boldsymbol{\eta}^{(m - 1)} - \boldsymbol{u}^{(m - 1)} \right) + \beta_v \right),
 $$
 
@@ -98,6 +99,7 @@ Which will implemented in the same way
 
 ```{r}
 draw_kappa_v <- function(eta, u, problem) {
+  #' Return one random samplef from the full conditional for kappa_v
   shape <- problem$n / 2 + problem$alpha_v
   rate <- 0.5 * t(eta - u) %*% (eta - u) + problem$beta_v
   sample <- rgamma(shape = shape, rate = rate, n = 1)[[1]]
@@ -107,19 +109,19 @@ draw_kappa_v <- function(eta, u, problem) {
 
 ### Full conditional sampler for $\uvec$
 
-The full conditional for $\boldsymbol{u}$ is
+$\boldsymbol{u}^{(m)}$ is drawn from the following full conditional distribution
 
 $$
-\boldsymbol{u}~|~\boldsymbol{\eta}^{(n - 1)}, \kappa_u^{(m)}, \kappa_v^{(m)}
+\boldsymbol{u}^{(m)}~|~\boldsymbol{\eta}^{(n - 1)}, \kappa_u^{(m)}, \kappa_v^{(m)}
 \sim
 \mathcal{N}\left(
-  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} R\right)^{-1} \kappa_v^{(m)} \boldsymbol{\eta}^{(m - 1)},~
-  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} R\right)^{-1}
+  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} \boldsymbol{R}\right)^{-1} \kappa_v^{(m)} \boldsymbol{\eta}^{(m - 1)},~
+  \left(\kappa_v^{(m)} I + \kappa_u^{(m)} \boldsymbol{R}\right)^{-1}
 \right)
 $$
 Now, notice that the adjacency matrix $R$ is a sparse matrix. Thus, $\left(\kappa_v^{(n - 1)} I + \kappa_u^{(n - 1)} R\right)$ is also a sparse matrix.
 It is therefore preferable to store this matrix as a *sparse* matrix, using the `spam` R-library.
-Additionally, we use the `rmvnorm.canonical` function in order to formulate the normal distribution in form of the sparse *precision* matrix instead of the covariance matrix. With other words
+Additionally, we use the `rmvnorm.canonical` function in order to formulate the normal distribution in form of the sparse *precision* matrix instead of the covariance matrix. With other words,
 
 \begin{align*}
 Q \leftarrow &\kappa_v^{(m)} I + \kappa_u^{(m)} R \\
@@ -130,6 +132,7 @@ The implementation of the full conditional sampler for $\boldsymbol{u}$ therefor
 
 ```{r}
 draw_u <- function(kappa_v, kappa_u, eta, problem) {
+  #' Return one sample from the full conditional distribution of u
   Q <- diag.spam(x = kappa_v, nrow = problem$n) + kappa_u * problem$R
   b <- kappa_v * eta
   sample <- c(rmvnorm.canonical(n = 1, b = b, Q = Q))
@@ -141,7 +144,9 @@ draw_u <- function(kappa_v, kappa_u, eta, problem) {
 
 The sampling for $\boldsymbol{\eta}$ requires a Metropolis-Hastings step, since the distribution is not in a well-known form.
 
-We will draw a proposal, $\boldsymbol{\eta}^*$, from the taylor expansion $q(\boldsymbol{\eta}^* ~|~ ...)$ of $p(\boldsymbol{\eta}^* ~|~ ...)$ around $z = \boldsymbol{\eta}^{(m - 1)}$.
+#### Proposal density
+
+We will draw a proposal, $\boldsymbol{\eta}^*$, from the taylor expansion, $q(\boldsymbol{\eta}^* ~|~ ...)$, of $p(\boldsymbol{\eta}^* ~|~ ...)$ around $z = \boldsymbol{\eta}^{(m - 1)}$.
 
 $$
 q \left(
@@ -153,14 +158,15 @@ q \left(
     \kappa_u^{(m)},
     \kappa_v^{(m)}
 \right)
+\\
 \propto
 \exp \left\{
   -\frac{1}{2} {\boldsymbol{\eta}^*}^T
     \left(
-      \kappa_v^{(m)} \textbf{I} + \text{diag}(c(\boldsymbol{\eta}^{(m - 1)})) 
+      \kappa_v^{(m)} \textbf{I} + \text{diag}\left(c\left(\boldsymbol{\eta}^{(m - 1)}\right)\right) 
     \right)
     \boldsymbol{\eta}^*
-  + {\boldsymbol{\eta}^*}^T \left( \kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)}) \right)
+  + {\boldsymbol{\eta}^*}^T \left( \kappa_v^{(m)} \boldsymbol{u}^{(m)} + b\left(\boldsymbol{\eta}^{(m - 1)}\right) \right)
 \right\},
 $$
 
@@ -169,13 +175,12 @@ Again, we can use the sparse, canonical representation in the implementation
 
 \begin{align*}
   Q \leftarrow &\kappa_v^{(m)} \textbf{I} + \text{diag}(c(\boldsymbol{\eta}^{(m - 1)})) \\
-  b \leftarrow &\kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)})
+  b \leftarrow &\kappa_v^{(m)} \boldsymbol{u}^{(m)} + b(\boldsymbol{\eta}^{(m - 1)}).
 \end{align*}
 
 So the proposal sample drawer is therefore implemented as follows
 
 ```{r}
-source("data/dmvnorm.R")
 draw_proposal_eta <- function(z, u, kappa_v, problem) {
   b <- problem$y + problem$E * exp(z) * (z - 1)
   c <- problem$E * exp(z)
@@ -187,6 +192,10 @@ draw_proposal_eta <- function(z, u, kappa_v, problem) {
   return(sample)
 }
 ```
+
+#### Acceptance probability
+
+The acceptance probability, $\boldsymbol{\alpha}^{(m)}$, for setting $\boldsymbol{\eta}^{(m)} \leftarrow \boldsymbol{\eta}^*$ is as follows
 
 $$
 \boldsymbol{\alpha}^{(m)}
@@ -237,11 +246,14 @@ $$
 \right)
 $$
 
-It should be noted that these density calculations will be performed in log-space going forwards.
+It should be noted that these density calculations, $q(...)$ and $p(...)$, will be performed in log-space going forwards.
 First, we need to implement $\log{q(\boldsymbol{\eta}~|~...)}$.
 
 ```{r}
+source("data/dmvnorm.R")
 eta_q_log_density <- function(eta, z, u, kappa_v, problem) {
+  #' Return the *proportional* full conditional log density of eta
+  #' from the Taylor expanded density function around z
   b <- problem$y + problem$E * exp(z) * (z - 1)
   c <- problem$E * exp(z)
   
@@ -253,14 +265,14 @@ eta_q_log_density <- function(eta, z, u, kappa_v, problem) {
 }
 ```
 
-Here we have calculated the $\log q(\boldsymbol{\eta^*}~|~...)$ using `dmvnorm.canonical` as implemented in the provided file \texttt{dmvnorm.R}.
+Here we have calculated the $\log q(\boldsymbol{\eta^*}~|~...)$ using `dmvnorm.canonical` as implemented in the provided file `dmvnorm.R`.
 
 Now, we must implement $\log{p(\boldsymbol{\eta}~|~...)}$.
 Notice that all the conditionals are equal in both $p$ function invocations, so we need not normalize the implementation of $\log{p(...)}$ as the normality constants cancel out. The implementation is therefore as follows
 
 ```{r}
 eta_p_log_density <- function(eta, kappa_v, u, problem) {
-  #' Proportional full conditional density for eta
+  #' Return the proportional full conditional log density for eta
   return(
     -0.5 * t(eta) %*% diag.spam(x = kappa_v, nrow = problem$n) %*% eta
     + t(eta) %*% (kappa_v * u)
@@ -274,6 +286,7 @@ We can now implement the calculation of $\boldsymbol{\alpha}^{(m)}$.
 
 ```{r}
 acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, problem) {
+  #' Return the acceptance probability for going from `previous_eta` to `proposal_eta`
   log_p_forward <- eta_p_log_density(
           eta = proposal_eta,
           kappa_v = kappa_v,
@@ -311,20 +324,26 @@ acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, probl
 }
 ```
 
+If $u < \boldsymbol{\alpha}^{(m)}$, where $u \sim \mathcal{U}(0, 1)$, we set $\boldsymbol{\eta}^{(m)} \leftarrow \boldsymbol{\eta}^{(m - 1)}$.
+
 ### Implementing the MCMC algorithm
 
-We now have all the required components required to implement the outer loop MCMC algorithm.
+Now we have all the required components required to implement the outer loop of the MCMC algorithm.
 The algorithm requires initial values for $\boldsymbol{u}^{(1)}$ and $\boldsymbol{\eta}^{(1)}$.
-We will set (rather arbitrarily) $\boldsymbol{u}^{(1)} = \vec{0}$, while setting the value of $\boldsymbol{\eta}^{(0)}$ by sampling our proposal density $q(...)$ with the following parameters
+We will set (rather arbitrarily) $\boldsymbol{u}^{(1)} = \vec{0}$, while setting the value of $\boldsymbol{\eta}^{(1)}$ by sampling our proposal density $q(...)$ with the following parameters
 
 \begin{align*}
   \boldsymbol{z} \leftarrow& \vec{0} \\
   \boldsymbol{u} \leftarrow& \vec{0} \\
-  \kappa_v \leftarrow& 500
+  \kappa_v \leftarrow& 180
 \end{align*}
 
 ```{r, cache = TRUE}
 MCMC <- function(steps, problem) {
+  #' Run MCMC algorithm with number of steps = `steps`
+  #' Returns a list of sampled values for: kappa_u, kappa_v, u, eta
+  #' Additionally, the acceptance probabilities and time used is returned
+  
   # Initial guess for parameters u and eta
   u <- c(rep_len(0.0, problem$n))
   eta <- draw_proposal_eta(z = u, u = u, kappa_v = 180, problem = problem)
@@ -388,6 +407,9 @@ MCMC <- function(steps, problem) {
 }
 ```
 
+
+### Running the MCMC sampler
+
 A posterior sample size of $M = 70~000$, after having a burn-in period of $1000$ steps, is sampled.
 We will see shortly that this burn-in period is more than sufficient.
 
@@ -398,17 +420,20 @@ burnin <- 1000
 result <- MCMC(steps = M + burnin, problem = problem)
 ```
 
-```{r, show = FALSE, eval = FALSE}
+```{r, include = FALSE, eval = FALSE}
 # Run this line if it is the first time you have executed MCMC and want to save the result
 save(result, list = c("result"), file = "data/MCMC_result.Rdata")
 ```
 
-```{r, show = FALSE}
+```{r, include = FALSE}
 # Load the saved result for `result`
 M <- 70000
 burnin <- 1000
 load(file = "data/MCMC_result.Rdata")
 ```
+
+For reproducability, a specific run is cached and available for download at [http://folk.ntnu.no/jakobgm/MCMC_result.Rdata](http://folk.ntnu.no/jakobgm/MCMC_result.Rdata).
+This is the data that will be analyzed in the upcoming sections.
 
 #### Time usage
 
