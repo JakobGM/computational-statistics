@@ -6,13 +6,13 @@ output:
 ---
 # Exercise 1 - Derivations
 
-\newcommand{\kappau}{\kappa_u}
-\newcommand{\kappav}{\kappa_v}
-\newcommand{\uvec}{\boldsymbol{u}}
-\newcommand{\Rmat}{\boldsymbol{R}}
-\newcommand{\yvec}{\boldsymbol{y}}
-\newcommand{\Evec}{\boldsymbol{E}}
-\newcommand{\etavec}{\boldsymbol{\eta}}
+\providecommand{\kappau}{\kappa_u}
+\providecommand{\kappav}{\kappa_v}
+\providecommand{\uvec}{\boldsymbol{u}}
+\providecommand{\Rmat}{\boldsymbol{R}}
+\providecommand{\yvec}{\boldsymbol{y}}
+\providecommand{\Evec}{\boldsymbol{E}}
+\providecommand{\etavec}{\boldsymbol{\eta}}
 
 ## a) Derivation of the posterior distribution
 
@@ -74,8 +74,11 @@ $$
 We note that $f'(\eta_i) = y_i - E_i\exp(\eta_i)$ and $f''(\eta_i) = -E_i\exp(\eta_i)$, leading to 
 
 \begin{align*}
-\tilde{f}(\eta_i) &= y_iz_i - E_i\exp(z_i) + (y_i - E_i\exp(z_i))(\eta_i - z_i) - \frac{E_i}{2}(\eta^2 + 2\eta_iz_i + z_i^2) \\ &= E_i\exp(z_i)\left[z_i - \frac{z_i^2}{2} - 1\right] + \eta_i(y_i - E_i\exp(z_i)\left(z_i -1\right)) - \eta_i^2\frac{E_i\exp(z_i)}{2}
+\tilde{f}(\eta_i) &= y_iz_i - E_i\exp(z_i) + (y_i - E_i\exp(z_i))(\eta_i - z_i) - \frac{E_i}{2}(\eta^2 + 2\eta_iz_i + z_i^2) \\ &= E_i\exp(z_i)\left[z_i - \frac{z_i^2}{2} - 1\right] + \eta_i(y_i - E_i\exp(z_i)\left(z_i -1\right)) - \eta_i^2\frac{E_i\exp(z_i)}{2} \\
+&= a_i + \eta_ib_i - \eta_i^2\frac{c_i}{2},
 \end{align*}
+
+with $a_i = E_i\exp(z_i)\left[z_i - \frac{z_i^2}{2} - 1\right]$, $b_i = y_i - E_i\exp(z_i)\left(z_i -1\right)$ and $c_i = E_i\exp(z_i)$.
 
 ## c) Derivation of full conditionals
 
@@ -129,15 +132,22 @@ p(\etavec \mid \uvec, \yvec, \kappa_u, \kappa_v) &\propto p(\etavec, \uvec, \yve
 &= p(\yvec \mid \etavec, \uvec, \kappa_u, \kappa_v)p(\etavec, \uvec, \kappa_u, \kappa_v) \\
 &\propto p(\yvec \mid \etavec, \uvec, \kappa_u, \kappa_v)p(\etavec \mid \uvec, \kappa_u, \kappa_v) \\
 &= p(\yvec \mid \etavec)p(\etavec \mid \uvec, \kappa_v) \\
-&\propto \exp\left(\sum_{i=1}^{n}(y_i\eta_i - E_i\exp(\eta_i)) - \frac{\kappa_v}{2}(\etavec - \uvec)^T\boldsymbol{I}(\etavec - \uvec) \right).
+&\propto \exp\left(\sum_{i=1}^{n}(y_i\eta_i - E_i\exp(\eta_i)) - \frac{\kappa_v}{2}(\etavec - \uvec)^T\boldsymbol{I}(\etavec - \uvec) \right) \\
+&\propto \exp\left(\yvec^T\etavec - \exp(\etavec)^T\boldsymbol{E} + \etavec^T(\kappa_v\uvec) - \frac{1}{2}\etavec^T(\kappa_v\boldsymbol{I})\etavec\right).
 \end{align*}
- 
-We recognize $\sum_{i=1}^{n}(y_i\eta_i - E_i\exp(\eta_i))$ as $\sum_{i=1}^nf(\eta_i)$. By substituting $f(\eta_i)$ for it's approximation $\tilde{f}(\eta_i)$ we get $\sum_{i=1}^n\tilde{f}(\eta_i) = \sum_{i=1}^na_i + \etavec^T\boldsymbol{b} - \frac{1}{2}\etavec^T\textrm{diag}(\boldsymbol{c})\etavec$
 
-This enables us to find the approximation the following approximation of $p(\etavec \mid \uvec, \yvec, \kappa_u, \kappa_v)$.
+In preceding calculation we've used that 
+$$
+\frac{\kappa_v}{2}(\etavec - \uvec)^T\boldsymbol{I}(\etavec - \uvec) = 
+\sum_{i=1}^n\frac{\kappa_v}{2}(\eta_i - u_i)^2 = \frac{\kappa_v}{2}\sum_{i=1}^n\eta_i^2 - 2\eta_iu_i + u_i^2 = \frac{1}{2}\etavec^T(\kappa_v\boldsymbol{I})\etavec - \etavec^T(\kappa_v\uvec) + \frac{\kappa_v}{2}\uvec^T\uvec
+$$
+ 
+We recognize $\sum_{i=1}^{n}(y_i\eta_i - E_i\exp(\eta_i))$ as $\sum_{i=1}^nf(\eta_i)$. By substituting $f(\eta_i)$ for it's approximation $\tilde{f}(\eta_i)$ we get $\sum_{i=1}^n\tilde{f}(\eta_i) = \sum_{i=1}^na_i + \etavec^T\boldsymbol{b} - \frac{1}{2}\etavec^T\textrm{diag}(\boldsymbol{c})\etavec$, where $\boldsymbol{b} = \begin{bmatrix}b_1, \ldots, b_n\end{bmatrix}^T$ and $\boldsymbol{c} = \begin{bmatrix}c_1, \ldots, c_n\end{bmatrix}^T$. 
+
+This enables us to find the following approximation of $p(\etavec \mid \uvec, \yvec, \kappa_u, \kappa_v)$.
 
 \begin{align*}
-q(\etavec \mid z, \uvec, \yvec, \kappa_u, \kappa_v) &= \exp\left(\etavec^T\boldsymbol{b} + \frac{1}{2}{\etavec}^T\textrm{diag}(\boldsymbol{c})\etavec - \frac{\kappa_v}{2}(\etavec - \uvec)^T\kappa_v\boldsymbol{I}(\etavec - \uvec) \right) \\
+q(\etavec \mid z, \uvec, \yvec, \kappa_u, \kappa_v) &\propto \exp\left(-\etavec^T\boldsymbol{b} - \frac{1}{2}{\etavec}^T\textrm{diag}(\boldsymbol{c})\etavec + \etavec^T(\kappa_v\uvec) - \frac{1}{2}\etavec^T(\kappa_v\boldsymbol{I})\etavec) \right) \\
 &\propto \exp\left(-\frac{1}{2}\etavec^T(\textrm{diag}(\boldsymbol{c}) + \kappa_v\boldsymbol{I}))\etavec - \etavec^T(\boldsymbol{b} + \kappa_v\uvec)\right) \\
 \end{align*}
 
