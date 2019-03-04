@@ -10,52 +10,95 @@ output:
 
 ## a) Implementation in `R-INLA`
 
+Now we implement the same model using `R-INLA`.
+
 ```{r}
 library(INLA)
-attach(Oral)
+```
 
-g <- system.file("demodata/germany.graph", package="INLA")
+### Preparing the data
+
+The same dataset will be used, but we need to duplicate the region covariate, since `INLA` forces us to have seperate covariate names for the unstructured and structured covariates.
+
+```{r}
+attach(Oral)
 data <- tibble(
   region_structured = seq(1, problem$n),
   region_random = seq(1, problem$n),
   Y = Oral$Y,
   E = Oral$E
 )
+```
 
+### Formulating the model
+
+We start by specifying the priors for the precision parameters, $\kappa_u$ and $\kappa_v$, both of which are $\sim \text{Gamma}(1, 0.01)$.
+It is important that we specify these priors in log-space instead, due to implementation details of `R-INLA`.
+
+```{r}
 kappa_v_hyper <- list(
   prec = list(prior = "loggamma", param = c(1, 0.01))
 )
-kappa_u_hyper <- list(
-  prec = list(prior = "loggamma", param = c(1, 0.01))
-)
+kappa_u_hyper <- kappa_v_hyper
+```
 
+`INLA` requires a graph for Germany's districts for the structured spatial components of our model.
+It is by default included in the `INLA` distribution.
 
+```{r}
+g <- system.file("demodata/germany.graph", package="INLA")
+```
+
+We can now specify the components of our model, i.e. $\boldsymbol{\eta} = \boldsymbol{u} + \boldsymbol{v}$.
+The hyperparameters are specified with the `hyper` argument.
+The structural spatial component is named `besag` in `INLA`, while the unstructured white noise is named `iid`.
+Lastly, we must set *no* zero sum constraint for the `besag` model and specify no intercept in order to *not* approximate the model $\boldsymbol{\eta} = \mu \boldsymbol{1} + \boldsymbol{u} + \boldsymbol{v}$ instead.
+
+```{r}
 formula <- Y ~
   -1 +
   f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
   f(region_random, model = "iid", hyper = kappa_v_hyper)
+```
 
+### Invoking `INLA` and retrieving the results
+
+Finally, we can invoke the `inla` function in order to approximate our model parameters.
+We must specify a poisson response distribution, and include our known component of the Poisson mean, $E$.
+Calculation of the deviance information criterior (DIC) will also come to use later.
+
+```{r}
 inla_result <- inla(
   formula = formula,
   family = "poisson",
   data = data,
   E = E,
-  verbose = FALSE,
   control.compute = list(dic = TRUE)
 )
-inla_result <- inla.hyperpar(inla_result)
+```
 
+We can instruct `INLA` to calculate *improved* estimates of the posterior marginals for the precision parameters $\kappa_u$ and $\kappa_v$.
+
+```{r}
+inla_result <- inla.hyperpar(inla_result)
+```
+
+Finally, we can retrieve the posterior marginals for $\kappa_u$, $\kappa_v$, $\boldsymbol{u}$, and $\boldsymbol{v}$.
+
+```{r}
 uv_marginals <- inla_result$marginals.random
 inla_u <- uv_marginals$region_structured
 inla_v <- uv_marginals$region_random
 
-marginals <- inla_result$marginals.hyperpar
-inla_kappa_u <- marginals$`Precision for region_structured`
-inla_kappa_v <- marginals$`Precision for region_random`
-
-inla_kappa_u_smoothed <- as_tibble(inla_kappa_u)
-inla_kappa_v_smoothed <- as_tibble(inla_kappa_v)
+kappa_marginals <- inla_result$marginals.hyperpar
+inla_kappa_u <- kappa_marginals$`Precision for region_structured`
+inla_kappa_v <- kappa_marginals$`Precision for region_random`
 ```
+
+
+### Analysis of results
+
+We can now compare the results of our MCMC sampling algorithm to the result from `INLA` by plotting `INLA`'s posterior marginals on top of density histograms of our MCMC samples.
 
 ```{r, fig.width = 8.3, fig.height = 9, fig.fullwidth=TRUE, fig.cap = "\\label{fig:marginals}Plots comparing the posterior marginals obtained by INLA, drawn in red, to histograms of the MCMC-samples, drawn in grey. The y-axis is normalized such that both integrate to 1. First column shows u-components, second column the v-components, while the third shows $\kappa_u$ and $\kappa_v$."}
 plot_marginal <- function(param, marginal, binwidth) {
@@ -100,12 +143,21 @@ layout <- rbind(
   c(1, 4, 7), c(1, 4, 7), c(2, 5, 7),
   c(2, 5, 8), c(3, 6, 8), c(3, 6, 8)
 )
-grid.arrange(grobs = plots, layout_matrix = layout, left = "density", bottom = "parameter value")
+grid.arrange(
+  grobs = plots,
+  layout_matrix = layout,
+  left = "density",
+  bottom = "parameter value"
+)
 ```
 
-A comparison between MCMC and INLA, specifically the spatially structured effect $\exp(\hat{u}_i)$. The MCMC result is portrayed on the left hand side, while INLA's result is portrayed on the right hand side."}
+By inspecting figure \ref{fig:marginals}, we observe that the density histograms are consistent with the posterior marginals from `INLA`.
 
-```{r, fig.cap = "\\label{fig:inla_germany}"}
+### Visual comparison
+
+The spatially structured effects, $\exp(\hat{u}_i)$, can be visually compared. 
+
+```{r, fig.cap = "\\label{fig:inla_germany}$u_i$ components plotted on top of the map of Germany. The MCMC result is portrayed on the left hand side, while INLA's result is portrayed on the right hand side."}
 uv_summaries <- inla_result$summary.random
 u_summary <- uv_summaries$region_structured
 inla_exp_u_median <- u_summary$`0.5quant` %>% exp() %>% as_vector()
@@ -126,6 +178,8 @@ germany.plot(
 )
 ```
 
+There is no discernable difference between the results from `INLA` and the results from our MCMC samples in figure \ref{fig:inla_germany}.
+
 ## b) Smoking as new covariate
 
 ```{r}
@@ -134,7 +188,7 @@ data <- add_column(data, smoking)
 
 linear_smoking_formula <- Y ~
   -1 +
-  f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
+  f(region_structured, model = "besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
   f(region_random, model = "iid", hyper = kappa_v_hyper) +
   smoking
 
