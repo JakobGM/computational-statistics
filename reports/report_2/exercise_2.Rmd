@@ -32,15 +32,12 @@ library(fields, warn.conflict=FALSE)
 
 # Custom color scheme
 library(colorspace)
-col <- diverge_hcl(8)
 ```
 
 The data of interest is contained in the `Oral` dataset.
-The standardised mortality rates (SMR) $y_i / E_i$ can be visualized on top of the map of germany's districts.
 
 ```{r}
 attach(Oral)
-germany.plot(Oral$Y / Oral$E, col=col, legend=TRUE)
 ```
 
 The neighbourhood structure matrix, $\boldsymbol{R}$, is provided in the data file \texttt{tma4300_ex2_Rmatrix.Rdata}.
@@ -687,3 +684,58 @@ Our implementation generates $\approx 1.16$ effective samples per second.
 In isolation, this might not be very interesting, but it is very useful for comparison purposes.
 Making a change to an MCMC implementation in order to improve its resulting ESS might not be worth it if it substantially increases the time used by the algorithm. Solely comparing values for ESS not give the entire picture of the situation. For instance, "blocking" correlated variables updates together might be too slow compared to a more naive joint update, and the change may not be worth it in terms of computational time cost. Comparison of relative ESS can in such cases be used as a deciding factor.
 
+
+# Exercise 5 - Interpretation of results
+
+Now we interpret our results, specifically the spatially structured components of $\boldsymbol{\eta}$, i.e. $\boldsymbol{u}$.
+We will use the median of the post-burn-in posterior samples for $\boldsymbol{u}$, $\hat{u}_i = \mathrm{median}(u_i)$, as our estimator.
+
+In order to interpret the following results, observe that
+
+$$
+\lambda_i = E_i \exp(\eta_i) = E_i \exp(u_i + v_i) \propto \exp(u_i),
+$$
+
+with other words, $u_i$ has a multiplicative effect on the expected numbers of oral cavity cancer occurrences in each German district during the 5-year period. Great values for $\hat{u}_i$ indicate some underlying regional effect in the spatial area which may contribute increased cancer rates. If this is of environmental-, socio-economic, or some other nature is unknown to us, as there are too many correlational effects between place of residence and other factors. Such correlations could be quality of life, health service quality, income, age structure of the population, and so on.
+
+The standardised mortality rates (SMR) $y_i / E_i$ can be visualized on top of the map of Germany's districts and compared to the spatially structured effects, $\hat{u}_i$, side-by-side.
+
+```{r spatial_effect_plot, fig.fullwidth = TRUE, fig.cap = "\\label{fig:germany} On the left hand side, the standardized mortality rates are plotted. While on the right hand side, a plot of the spatially structured effects on oral cancer rates in Germany."}
+# Calculate the posterior median of exp(u)
+exp_u_median <- result$u %>%
+  as_tibble() %>%
+  slice(-burnins) %>%
+  exp() %>%
+  summarize_all(median) %>%
+  as_vector()
+
+# Custom color scheme for the Germany plot
+col <- diverge_hcl(8)
+
+# Put the next to figures side-by-side
+par(mfcol=c(1, 2))
+
+germany.plot(
+  Oral$Y / Oral$E,
+  col=col,
+  legend=TRUE,
+  main = bquote("Standardized mortality rates: "~y_i / E[i]),
+  cex.mai = 0.9
+)
+germany.plot(
+  exp_u_median,
+  col = col,
+  legend = TRUE,
+  main = bquote("Structured spatial effects: "~u[i]),
+  cex.main = 0.9
+)
+```
+
+From figure \ref{fig:germany}, spatial patterns immediately become more obvious in the spatial effect plot on the right hand side, compared to the standardized mortality rates plot on the left hand side.
+The German districts close to the German-French border (Baden-Württemberg, The Black Forest, and Rhineland-Palatinate/Saarland) seem to be especially adversely affected.
+
+On the other hand, the German state of Saxony, along the border to the Czech Republic is \textit{not} as adversely affected by the spatial effect. The same can be said for almost the entirety of the old German Democratic Republic, with exception of the area east of Rostock towards the Baltic Sea.
+
+It is important to notice that this oral cavity cancer data set is from the 5-year period of 1986-1990, coincidentally the years leading up to, and including, the reunification of East- and West-Germany. There were, and still are, huge socio-economic, cultural, and demographic differences between these two regions, which can go a long way towards explaining why we see this pattern in the underlying spatial structure.
+
+Why the French-German border region and the Baltic coastal area stands out as \textit{especially} adversely affected by oral cancer, we do not know.
