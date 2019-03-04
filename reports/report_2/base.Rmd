@@ -13,7 +13,7 @@ output:
 
 ```{r setup, include=FALSE}
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE, fig.pos = '!h')
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.pos = '!h')
 ```
 
 ```{r child = 'exercise_1.Rmd'}
