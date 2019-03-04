@@ -147,8 +147,8 @@ We recognize $\sum_{i=1}^{n}(y_i\eta_i - E_i\exp(\eta_i))$ as $\sum_{i=1}^nf(\et
 This enables us to find the following approximation of $p(\etavec \mid \uvec, \yvec, \kappa_u, \kappa_v)$.
 
 \begin{align*}
-q(\etavec \mid z, \uvec, \yvec, \kappa_u, \kappa_v) &\propto \exp\left(-\etavec^T\boldsymbol{b} - \frac{1}{2}{\etavec}^T\textrm{diag}(\boldsymbol{c})\etavec + \etavec^T(\kappa_v\uvec) - \frac{1}{2}\etavec^T(\kappa_v\boldsymbol{I})\etavec) \right) \\
-&\propto \exp\left(-\frac{1}{2}\etavec^T(\textrm{diag}(\boldsymbol{c}) + \kappa_v\boldsymbol{I}))\etavec - \etavec^T(\boldsymbol{b} + \kappa_v\uvec)\right) \\
+q(\etavec \mid z, \uvec, \yvec, \kappa_u, \kappa_v) &\propto \exp\left(\etavec^T\boldsymbol{b} - \frac{1}{2}{\etavec}^T\textrm{diag}(\boldsymbol{c})\etavec + \etavec^T(\kappa_v\uvec) - \frac{1}{2}\etavec^T(\kappa_v\boldsymbol{I})\etavec) \right) \\
+&\propto \exp\left(-\frac{1}{2}\etavec^T(\textrm{diag}(\boldsymbol{c}) + \kappa_v\boldsymbol{I}))\etavec + \etavec^T(\boldsymbol{b} + \kappa_v\uvec)\right) \\
 \end{align*}
 
 
