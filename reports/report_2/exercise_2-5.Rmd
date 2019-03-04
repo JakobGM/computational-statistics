@@ -690,13 +690,16 @@ The \texttt{effectiveSize()} function from the \texttt{coda} R-library can be us
 
 ```{r}
 ESS <- effectiveSize(usable_samples)
-ESS[c("kappa_u", "kappa_v")]
+ESS %>%
+  kable(
+    caption = "\\label{tab:ESS}Effective number of samples for our 8 paramaters of interest."
+  )
 ```
 
-What does this imply?
-It is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $766$ and $663$ samples, respectively, in order to obtain parameter estimates with the same precision as if we used our MCMC samples of size $70~000$. This is approximately $1\%$.
+What does table \ref{tab:ESS} imply?
+It is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $1156$ and $626$ samples, respectively, in order to obtain parameter estimates with the *same* precision as if we used our MCMC samples of size $70~000$. This is less than $2\%$ of the MCMC sample size, $M$.
 
-With other words, an independent sampler that runs 100 times as slow as our MCMC implementation would therefore be of approximately equal benefit as our MCMC implementation, not considering memory usage and burn-in periods.
+With other words, an independent sampler that runs 50 times as slow as our MCMC implementation would therefore be of approximately equal benefit as our MCMC implementation, not considering memory usage and burn-in periods.
 
 ### Possible improvements for the ESS values
 
@@ -718,11 +721,11 @@ We can also calculate the \textit{relative} ESS by dividing the mean ESS by the 
 
 ```{r}
 seconds_used <- 60 * as.numeric(result$time_used)
-relative_ESS <- mean(ESS[c("kappa_u", "kappa_v")]) / seconds_used
+relative_ESS <- mean(ESS) / seconds_used
 sprintf("%1.3f effective samples per second", relative_ESS)
 ```
 
-Our implementation generates $\approx 1.16$ effective samples per second.
+Our implementation generates $\sim 27$ effective samples per second.
 
 ### Interpretation
 
