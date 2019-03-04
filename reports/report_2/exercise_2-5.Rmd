@@ -184,13 +184,9 @@ draw_proposal_eta <- function(z, u, kappa_v, problem) {
   Q <- diag.spam(x = kappa_v, nrow = problem$n) + diag.spam(c)
   
   sample <- c(rmvnorm.canonical(n = 1, b = canonical_b, Q = Q))
-  logprob <- dmvnorm.canonical(x = sample, b = canonical_b, Q = Q, log = TRUE)[[1]]
-  return(list(sample = sample, logprob = logprob))
+  return(sample)
 }
 ```
-
-Here we have calculated the $\log q(\boldsymbol{\eta^*}~|~z = \boldsymbol{\eta}^{(m - 1)})$ using `dmvnorm.canonical` as implemented in the provided file \texttt{dmvnorm.R}.
-This is because it will be needed in the in the calculation for the acceptance probability $\boldsymbol{\alpha}^{(m)}$ for setting $\boldsymbol{\eta}^{(m)} \leftarrow \boldsymbol{\eta}^*$.
 
 $$
 \boldsymbol{\alpha}^{(m)}
@@ -242,12 +238,28 @@ $$
 $$
 
 It should be noted that these density calculations will be performed in log-space going forwards.
-
-The calculation of $\log{q(...)}$ is already handled by \texttt{draw_proposal_eta()}, but we must implement $\log{p(...)}$.
-First notice that all the conditionals are equal in both $p$ function invocations, so we need not normalize the implementation of $\log{p(...)}$ as the normality constants cancel out. The implementation is therefore as follows
+First, we need to implement $\log{q(\boldsymbol{\eta}~|~...)}$.
 
 ```{r}
-eta_log_density <- function(eta, kappa_v, u, problem) {
+eta_q_log_density <- function(eta, z, u, kappa_v, problem) {
+  b <- problem$y + problem$E * exp(z) * (z - 1)
+  c <- problem$E * exp(z)
+  
+  canonical_b <- kappa_v * u + b
+  Q <- diag.spam(x = kappa_v, nrow = problem$n) + diag.spam(c)
+  
+  logprob <- dmvnorm.canonical(x = eta, b = canonical_b, Q = Q, log = TRUE)[[1]]
+  return(logprob)
+}
+```
+
+Here we have calculated the $\log q(\boldsymbol{\eta^*}~|~...)$ using `dmvnorm.canonical` as implemented in the provided file \texttt{dmvnorm.R}.
+
+Now, we must implement $\log{p(\boldsymbol{\eta}~|~...)}$.
+Notice that all the conditionals are equal in both $p$ function invocations, so we need not normalize the implementation of $\log{p(...)}$ as the normality constants cancel out. The implementation is therefore as follows
+
+```{r}
+eta_p_log_density <- function(eta, kappa_v, u, problem) {
   #' Proportional full conditional density for eta
   return(
     -0.5 * t(eta) %*% diag.spam(x = kappa_v, nrow = problem$n) %*% eta
@@ -262,21 +274,33 @@ We can now implement the calculation of $\boldsymbol{\alpha}^{(m)}$.
 
 ```{r}
 acceptance_probability <- function(proposal_eta, previous_eta, kappa_v, u, problem) {
-  log_p_forward <- eta_log_density(
-          eta = proposal_eta$sample,
+  log_p_forward <- eta_p_log_density(
+          eta = proposal_eta,
           kappa_v = kappa_v,
           u = u,
           problem = problem
   )
-  log_p_backward <- eta_log_density(
-          eta = previous_eta$sample,
+  log_p_backward <- eta_p_log_density(
+          eta = previous_eta,
           kappa_v = kappa_v,
           u = u,
           problem = problem
   )
   
-  log_q_forward <- proposal_eta$logprob
-  log_q_backward <- draw_proposal_eta(z = proposal_eta$sample, u = u, kappa_v = kappa_v, problem = problem)$logprob
+  log_q_forward <- eta_q_log_density(
+    eta = proposal_eta,
+    z = previous_eta,
+    u = u,
+    kappa_v = kappa_v,
+    problem = problem
+  )
+  log_q_backward <- eta_q_log_density(
+    eta = previous_eta,
+    z = proposal_eta,
+    u = u,
+    kappa_v = kappa_v,
+    problem = problem
+  )
   
   alpha <- exp(log_p_forward + log_q_backward - log_p_backward - log_q_forward)
   
@@ -303,7 +327,7 @@ We will set (rather arbitrarily) $\boldsymbol{u}^{(1)} = \vec{0}$, while setting
 MCMC <- function(steps, problem) {
   # Initial guess for parameters u and eta
   u <- c(rep_len(0.0, problem$n))
-  eta <- draw_proposal_eta(z = u, u = u, kappa_v = 500, problem = problem)
+  eta <- draw_proposal_eta(z = u, u = u, kappa_v = 180, problem = problem)
   
   # Data structures for saving sample results
   kappa_us <- vector()
@@ -317,14 +341,14 @@ MCMC <- function(steps, problem) {
   
   for (i in seq(1, steps)) {
     kappa_u <- draw_kappa_u(u = u, problem = problem)
-    kappa_v <- draw_kappa_v(eta = eta$sample, u = u, problem = problem)
-    u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta$sample, problem = problem)
+    kappa_v <- draw_kappa_v(eta = eta, u = u, problem = problem)
+    u <- draw_u(kappa_v = kappa_v, kappa_u = kappa_u, eta = eta, problem = problem)
     
     proposal_eta <- draw_proposal_eta(
-            z = eta$sample,
-            u = u,
-            kappa_v = kappa_v,
-            problem = problem
+      z = eta,
+      u = u,
+      kappa_v = kappa_v,
+      problem = problem
     )
     alpha <- acceptance_probability(
       proposal_eta = proposal_eta,
@@ -342,7 +366,7 @@ MCMC <- function(steps, problem) {
     kappa_vs <- c(kappa_vs, kappa_v)
     alphas <- c(alphas, alpha)
     us[i,] = u
-    etas[i,] = eta$sample
+    etas[i,] = eta
   }
   
   # Calculate the time used by the MCMC algorithm

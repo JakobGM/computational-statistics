@@ -97,8 +97,12 @@ usable_samples %>%
   )
 ```
 
-```{r inla_germany, fig.cap = "\\label{fig:inla_germany} A comparison between MCMC and INLA, specifically the spatially structured effect $\exp(\hat{u}_i)$. The MCMC result is portrayed on the left hand side, while INLA's result is portrayed on the right hand side."}
-inla_exp_u_median <- inla_u$`0.5quant` %>% exp() %>% as_vector()
+{r inla_germany, fig.cap = "\\label{fig:inla_germany} A comparison between MCMC and INLA, specifically the spatially structured effect $\exp(\hat{u}_i)$. The MCMC result is portrayed on the left hand side, while INLA's result is portrayed on the right hand side."}
+
+```{r}
+uv_summaries <- inla_result$summary.random
+u_summary <- uv_summaries$region_structured
+inla_exp_u_median <- u_summary$`0.5quant` %>% exp() %>% as_vector()
 par(mfcol=c(1, 2))
 germany.plot(
   exp_u_median,
