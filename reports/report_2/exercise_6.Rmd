@@ -182,10 +182,26 @@ There is no discernable difference between the results from `INLA` and the resul
 
 ## b) Smoking as new covariate
 
+We will now add a new covariate to our data set, `smoking`, the smoking consumption of each German district.
+
 ```{r}
 smoking = read.table("data/smoking.dat")$V1
 data <- add_column(data, smoking) 
+```
 
+We will create two new models including this covariate.
+
+### A liner model
+
+The effect of smoking can be modelled as a linear effect, i.e.
+
+$$
+\eta_i = u_i + v_i + \beta_{\text{smoke}} \cdot x_{\text{smoke}}
+$$
+
+This can be achieved by adding `smoke` to the `formula` passed to `INLA`
+
+```{r}
 linear_smoking_formula <- Y ~
   -1 +
   f(region_structured, model = "besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
@@ -197,15 +213,25 @@ linear_inla_result <- inla(
   family = "poisson",
   data = data,
   E = E,
-  verbose = FALSE,
   control.compute = list(dic = TRUE)
 )
+```
 
+
+### A random walk of second order
+
+Alternatively, we can model the effect of smoking as a random walk of second order.
+This is done by using the `rw2` model in `INLA`, were we will use the default prior parameters set by `INLA`.
+
+(Add theory from `inla.doc("rw2")` here)
+
+```{r}
 nonlinear_smoking_formula <- Y ~
   -1 +
   f(region_structured, model="besag", graph = g, hyper = kappa_u_hyper, constr = FALSE) +
   f(region_random, model = "iid", hyper = kappa_v_hyper) +
   f(smoking, model = "rw2")
+
 nonlinear_inla_result <- inla(
   formula = nonlinear_smoking_formula,
   family = "poisson",
@@ -215,3 +241,23 @@ nonlinear_inla_result <- inla(
   control.compute = list(dic = TRUE)
 )
 ```
+
+### Comparison of the three models
+
+We will now retrieve the deviance information criterion (DIC) for the three models from `INLA`.
+
+```{r}
+dics <- data.frame(
+  `Original model` = inla_result$dic$dic,
+  `Linear smoking` = linear_inla_result$dic$dic,
+  `RW2 smoking` = nonlinear_inla_result$dic$dic
+)
+rownames(dics) <- c("DIC")
+dics %>% kable(
+  caption = "\\label{tab:DIC} Deviance information criterion (DIC) for the three fitted models."
+)
+```
+
+Models with smaller values for DIC are to be preferred over models with larger DIC.
+Based on the result from table \ref{tab:DIC} we conclude that smoking as a linear effect is the better model, with the `rw2` model close behind.
+According to the DIC heuristic, the original model without `smoking` as a covariate is the least preferred model overall.
