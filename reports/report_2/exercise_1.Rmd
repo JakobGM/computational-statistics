@@ -44,8 +44,8 @@ Inserting the expressions for the probability distributions, combined with
 
 \begin{align*}
 p(\yvec\mid\etavec) &= \prod_{i=1}^n\frac{(E_i\exp(\eta_i))^{y_i}}{y_i!}\exp({-E_i\exp(\eta_i)}) \\
-&\propto \exp(\sum_{i=1}^ny_i\log(E_i) + y_i\eta_i - E_i\exp(\eta_i)) \\ 
-&\propto \exp(\sum_{i=1}^ny_i\eta_i - E_i\exp(\eta_i))
+&\propto \exp\left(\sum_{i=1}^ny_i\log(E_i) + y_i\eta_i - E_i\exp(\eta_i)\right) \\ 
+&\propto \exp\left(\sum_{i=1}^ny_i\eta_i - E_i\exp(\eta_i)\right)
 \end{align*}
 
 and 
@@ -92,6 +92,8 @@ p(\kappa_u \mid \etavec, \yvec, \uvec, \kappa_v) &\propto p(\kappa_u, \etavec, \
 &\propto \kappa_u^{\alpha_u + \frac{n-1}{2} - 1}\exp\left(-\kappa_u\left[\frac{1}{2}\uvec^T\Rmat\uvec + \beta_u\right]\right)
 \end{align*}
 
+This leads us to conclude that $\kappa_u \mid \etavec, \yvec, \uvec, \kappa_v \sim \textrm{Gamma}(\alpha_u + \frac{n-1}{2}, \frac{1}{2}\uvec^T\Rmat\uvec + \beta_u)$
+
 The full conditional density $p(\kappa_v \mid \etavec, \yvec, \uvec, \kappa_u)$ satisfies
 
 
@@ -114,6 +116,10 @@ p(\kappa_v \mid \etavec, \yvec, \uvec, \kappa_u) &\propto p(\etavec \mid \yvec, 
 &= p(\etavec \mid \uvec, \kappa_v)p(\kappa_v) \\
 &\propto \kappa_v^{\alpha_v + \frac{n}{2} - 1}\exp\left(-\kappa_v\left[\frac{1}{2}(\etavec - \uvec)^T(\etavec - \uvec) + \beta_v\right]\right).
 \end{align*}
+
+It can now be seen that $\kappa_v \mid \etavec, \yvec, \uvec, \kappa_u \sim \textrm{Gamma}(\alpha_v + \frac{n}{2}, \frac{1}{2}(\etavec - \uvec)^T(\etavec - \uvec) + \beta_v)$
+
+
 The full posterior $p(\uvec \mid \etavec, \yvec, \kappa_u, \kappa_v)$ is given by 
 
 \begin{align*}
@@ -122,8 +128,10 @@ p(\uvec \mid \etavec, \yvec, \kappa_u, \kappa_v) &\propto p(\uvec, \etavec, \yve
 &\propto p(\etavec \mid \uvec, \yvec, \kappa_u, \kappa_v)p(\uvec \mid \yvec, \kappa_u, \kappa_v) \\
 &= p(\etavec \mid \uvec, \kappa_v)p(\uvec \mid \kappa_u) \\
 &\propto \kappa_u^{\frac{n-1}{2}}\kappa_v^{\frac{n}{2}}\exp\left(-\frac{1}{2}\left[\kappa_u\uvec^T\Rmat\uvec + (\etavec - \uvec)^T\kappa_v\boldsymbol{I}(\etavec - \uvec)\right]\right) \\
-&\propto \exp\left(-\frac{1}{2}\uvec^T\left(\kappa_u\Rmat + \kappa_v\boldsymbol{I}\right)\uvec - \kappa_v\etavec^T\uvec\right).
+&\propto \exp\left(-\frac{1}{2}\uvec^T\left(\kappa_u\Rmat + \kappa_v\boldsymbol{I}\right)\uvec + \kappa_v\etavec^T\uvec\right).
 \end{align*}
+
+We recognize this as the normal distribution with a canonical parametrization, leading us to conclude that $\uvec \mid \etavec, \yvec, \kappa_u, \kappa_v \sim \mathcal{N}_C(\kappa_v\etavec^T, \kappa_u\Rmat + \kappa_v\boldsymbol{I})$.
 
 The full posterior $p(\etavec \mid \uvec, \yvec, \kappa_u, \kappa_v)$ is given by 
 
@@ -150,6 +158,8 @@ This enables us to find the following approximation of $p(\etavec \mid \uvec, \y
 q(\etavec \mid z, \uvec, \yvec, \kappa_u, \kappa_v) &\propto \exp\left(\etavec^T\boldsymbol{b} - \frac{1}{2}{\etavec}^T\textrm{diag}(\boldsymbol{c})\etavec + \etavec^T(\kappa_v\uvec) - \frac{1}{2}\etavec^T(\kappa_v\boldsymbol{I})\etavec) \right) \\
 &\propto \exp\left(-\frac{1}{2}\etavec^T(\textrm{diag}(\boldsymbol{c}) + \kappa_v\boldsymbol{I}))\etavec + \etavec^T(\boldsymbol{b} + \kappa_v\uvec)\right) \\
 \end{align*}
+
+This approximation can be recognized as a normal distribution with a canonical parametrization, $\mathcal{N}_C(\boldsymbol{b} + \kappa_v\uvec, \textrm{diag}(\boldsymbol{c}) + \kappa_v\boldsymbol{I}))$
 
 
 
