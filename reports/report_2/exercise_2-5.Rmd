@@ -726,7 +726,7 @@ germany.plot(
   exp_u_median,
   col = col,
   legend = TRUE,
-  main = bquote("Structured spatial effects: "~u[i]),
+  main = bquote("Structured spatial effects: "~e^u[i]),
   cex.main = 0.9
 )
 ```

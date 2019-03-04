@@ -20,19 +20,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.pos = '!h')
 ```
 
 \newpage
-```{r child = 'exercise_2.Rmd'}
-```
-
-\newpage
-```{r child = 'exercise_3.Rmd'}
-```
-
-\newpage
-```{r child = 'exercise_4.Rmd'}
-```
-
-\newpage
-```{r child = 'exercise_5.Rmd'}
+```{r child = 'exercise_2-5.Rmd'}
 ```
 
 \newpage
