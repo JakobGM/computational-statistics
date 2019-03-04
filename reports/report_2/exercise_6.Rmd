@@ -100,7 +100,7 @@ inla_kappa_v <- kappa_marginals$`Precision for region_random`
 
 We can now compare the results of our MCMC sampling algorithm to the result from `INLA` by plotting `INLA`'s posterior marginals on top of density histograms of our MCMC samples.
 
-```{r, fig.width = 8.3, fig.height = 9, fig.fullwidth=TRUE, fig.cap = "\\label{fig:marginals}Plots comparing the posterior marginals obtained by INLA, drawn in red, to histograms of the MCMC-samples, drawn in grey. The y-axis is normalized such that both integrate to 1. First column shows u-components, second column the v-components, while the third shows $\kappa_u$ and $\kappa_v$."}
+```{r, fig.width = 8.3, fig.height = 9, fig.fullwidth=TRUE, fig.cap = "\\label{fig:marginals}Plots comparing the posterior marginals obtained by INLA, drawn in red, to histograms of the MCMC-samples, drawn in grey. The y-axis is normalized such that both integrate to 1. First column shows u-components, second column the v-components, while the third shows kappa_u and kappa_v."}
 plot_marginal <- function(param, marginal, binwidth) {
   #' Plot histogram of MCMC samples on top of posterior marginals
   #' obtained from INLA.
