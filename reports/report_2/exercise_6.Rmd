@@ -269,20 +269,20 @@ According to the DIC heuristic, the original model without `smoking` as a covari
 
 [See this for example](http://www.maths.bath.ac.uk/~jjf23/brinla/intro.html)
 
-```{r}
+```{r, fig.cap = "\\label{fig:credible_interval} (Write comment here)"}
 smoking_marginals <- nonlinear_inla_result$marginals.random$smoking
 
 smoking_summary <- nonlinear_inla_result$summary.random$smoking
 
 posterior_median <- tibble(
-  index = seq(1, 85),
+  ID = smoking_summary$ID,
   median = smoking_summary$`0.5quant`,
   lower = smoking_summary$`0.025quant`,
   upper = smoking_summary$`0.975quant`
 )
 
 posterior_median %>%
-  ggplot(aes(x = index)) +
+  ggplot(aes(x = ID)) +
   geom_line(
     aes(y = median, color = "Posterior median")
   ) +
@@ -292,5 +292,10 @@ posterior_median %>%
   geom_line(
     aes(y = upper, color = "97.5% quantile")
   ) +
-  scale_x_discrete()
+  xlab("Smoking percentage") +
+  ylab("Effect")
 ```
+
+(Comment on figure \ref{fig:credible_interval})
+
+(Desribe how DIC is connected to the degree of trend in this plot)
