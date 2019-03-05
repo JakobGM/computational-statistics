@@ -716,15 +716,15 @@ Large values for ESS is to be preferred, and there are several strategies that c
 
 ### Calculation
 
-We can also calculate the \textit{relative} ESS by dividing the mean ESS by the time used by the MCMC algorithm.
+We can also calculate the \textit{relative} ESS by dividing the mean ESS of $\kappa_u$ and $\kappa_v$ by the time used by the MCMC algorithm.
 
 ```{r}
 seconds_used <- 60 * as.numeric(result$time_used)
-relative_ESS <- mean(ESS) / seconds_used
+relative_ESS <- mean(ESS[c("kappa_u", "kappa_v")]) / seconds_used
 sprintf("%1.3f effective samples per second", relative_ESS)
 ```
 
-Our implementation generates $\sim 27$ effective samples per second.
+Our implementation generates $\sim 1.6$ effective samples of $\kappa_u$ and $\kappa_v$ per second.
 
 ### Interpretation
 
