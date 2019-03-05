@@ -67,7 +67,7 @@ problem = list(
 
 We start by implementing samplers for the full conditional of $\kappa^{(m)}_u$, $\kappa^{(m)}_v$, and $\boldsymbol{u}^{(m)}$.
 
-### Sampling \kappa^{(m)}_u$ and $\kappa^{(m)}_v$
+### Sampling $\kappa^{(m)}_u$ and $\kappa^{(m)}_v$
 
 $\kappa_u^{(m)}$ will be drawn from the following full conditional
 

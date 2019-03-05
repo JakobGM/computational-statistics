@@ -275,11 +275,9 @@ According to the DIC heuristic, the original model without `smoking` as a covari
 
 ### Credible intervals
 
-95% credibility intervals are obtained by finding the 2.5th and 97.5th percentiles of the estimated marginals of $x_i$. This is done below, and the result are plotted for all the different components. Note that $\boldsymbol{x}$ only contains 85 unique values, resulting cases where multiple components of $\boldsymbol{x}$ share the same marginal distribution.
+95\% credibility intervals are obtained by finding the 2.5th and 97.5th percentiles of the estimated marginals of $x_i$. This is done below, and the result are plotted for all the different components. Note that $\boldsymbol{x}$ only contains 85 unique values, resulting cases where multiple components of $\boldsymbol{x}$ share the same marginal distribution.
 
-[See this for example](http://www.maths.bath.ac.uk/~jjf23/brinla/intro.html)
-
-```{r, fig.cap = "\\label{fig:credible_interval} Lines corresponding to the median, 97.5th percentile and 2.5th percentile of the different $\boldsymbol{x}$ - components plotted together with estimated linear smoking effect}
+```{r, fig.cap = "\\label{fig:credible_interval} Lines corresponding to the median, 97.5th percentile and 2.5th percentile of the different $\\boldsymbol{x}$ - components plotted together with estimated linear smoking effect"}
 smoking_marginals <- nonlinear_inla_result$marginals.random$smoking
 
 smoking_summary <- nonlinear_inla_result$summary.random$smoking
