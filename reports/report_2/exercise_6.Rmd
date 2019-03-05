@@ -191,7 +191,7 @@ data <- add_column(data, smoking)
 
 We will create two new models including this covariate.
 
-### A liner model
+### A linear model
 
 The effect of smoking can be modelled as a linear effect, i.e.
 
@@ -223,7 +223,17 @@ linear_inla_result <- inla(
 Alternatively, we can model the effect of smoking as a random walk of second order.
 This is done by using the `rw2` model in `INLA`, were we will use the default prior parameters set by `INLA`.
 
-(Add theory from `inla.doc("rw2")` here)
+By modelling the effect of smoking as a random walk of order 2 we assume that the observed covariates $\boldsymbol{x}_{smoke} = \begin{bmatrix}x_1, \ldots, x_N\end{bmatrix}$ satisfy 
+
+$$
+x_{i}^{\star} - 2x_{i+1}^{\star} + x_{i+2}^{\star} \sim \mathcal{N}(0, \tau^{-1}),
+$$
+where $\boldsymbol{x}^{\star}$ is $\boldsymbol{x}$ sorted in ascending order, and with duplicate values removed. The density of $\boldsymbol{x}$ is given by 
+
+$$
+\pi(\boldsymbol{x} \mid \tau) \propto \exp(-\frac{1}{2}\boldsymbol{x}^T\boldsymbol{Q}\boldsymbol{x})
+$$
+with $\boldsymbol{Q} = \tau\boldsymbol{S}$, where $\boldsymbol{S}$ ensures that the assumption regarding $\boldsymbol{x}^{\star}$ is satisified.
 
 ```{r}
 nonlinear_smoking_formula <- Y ~
@@ -265,14 +275,16 @@ According to the DIC heuristic, the original model without `smoking` as a covari
 
 ### Credible intervals
 
-(Credible intervals are obtained as the quantiles of the samples)
+95% credibility intervals are obtained by finding the 2.5th and 97.5th percentiles of the estimated marginals of $x_i$. This is done below, and the result are plotted for all the different components. Note that $\boldsymbol{x}$ only contains 85 unique values, resulting cases where multiple components of $\boldsymbol{x}$ share the same marginal distribution.
 
 [See this for example](http://www.maths.bath.ac.uk/~jjf23/brinla/intro.html)
 
-```{r, fig.cap = "\\label{fig:credible_interval} (Write comment here)"}
+```{r, fig.cap = "\\label{fig:credible_interval} Lines corresponding to the median, 97.5th percentile and 2.5th percentile of the different $\boldsymbol{x}$ - components plotted together with estimated linear smoking effect}
 smoking_marginals <- nonlinear_inla_result$marginals.random$smoking
 
 smoking_summary <- nonlinear_inla_result$summary.random$smoking
+
+linear_smoking_summary <- linear_inla_result$summary.fixed
 
 posterior_median <- tibble(
   ID = smoking_summary$ID,
@@ -292,10 +304,16 @@ posterior_median %>%
   geom_line(
     aes(y = upper, color = "97.5% quantile")
   ) +
-  xlab("Smoking percentage") +
+  geom_abline(
+    slope=linear_smoking_summary$`0.5quant`,
+    intercept=-0.25, 
+    linetype = "dashed",
+    colour = "black"
+  ) +
+  xlab("Smoking value") +
   ylab("Effect")
 ```
 
-(Comment on figure \ref{fig:credible_interval})
+It can be observed from figure \ref{fig:credible_interval} that the effect of the smoking variable changes rapidly for small values of $x_{smoke}$, remains almost constant for until $x_{smoke} \approx 50$ and then changes rapidly again as the value moves towards 100. The linear curve captures the increased effect from increased values, but does not enable the same degree of flexibility as the random walk model. 
 
-(Desribe how DIC is connected to the degree of trend in this plot)
+Table \ref{tab:DIC} shows that there's a considerable benefit to adding the effect of smoking to the model. The DIC for two the smoking models are almost identical, and does, on it's own, not suggest that one of the models should be preferred to the other. It's worth noting that the added flexibility of the random walk model is not sufficient to make the DIC smaller and that the simpler, linear model could therefore be to prefer.
