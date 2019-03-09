@@ -167,14 +167,16 @@ germany.plot(
   col=col,
   legend=TRUE,
   main = bquote("MCMC"),
-  cex.mai = 1.5
+  cex.mai = 1.5,
+  cex.axis = 0.5
 )
 germany.plot(
   inla_exp_u_median,
   col=col,
   legend=TRUE,
   main = bquote("INLA"),
-  cex.mai = 1.5
+  cex.mai = 1.5,
+  cex.axis = 0.5
 )
 ```
 
@@ -196,7 +198,7 @@ We will create two new models including this covariate.
 The effect of smoking can be modelled as a linear effect, i.e.
 
 $$
-\eta_i = u_i + v_i + \beta_{\text{smoke}} \cdot x_{\text{smoke}}
+\eta_i = u_i + v_i + \beta_{\text{smoke}} \cdot x_{i, \text{smoke}}
 $$
 
 This can be achieved by adding `smoke` to the `formula` passed to `INLA`

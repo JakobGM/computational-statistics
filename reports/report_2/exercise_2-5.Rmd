@@ -148,7 +148,7 @@ The sampling for $\boldsymbol{\eta}$ requires a Metropolis-Hastings step, since 
 
 We will draw a proposal, $\boldsymbol{\eta}^*$, from the approximate distribution $q(\boldsymbol{\eta}^* ~|~ ...)$ using a Taylor expansion around $z = \boldsymbol{\eta}^{(m - 1)}$.
 
-$$
+\begin{gather*}
 q \left(
   \boldsymbol{\eta^*}
   ~|~
@@ -168,7 +168,7 @@ q \left(
     \boldsymbol{\eta}^*
   + {\boldsymbol{\eta}^*}^T \left( \kappa_v^{(m)} \boldsymbol{u}^{(m)} + b\left(\boldsymbol{\eta}^{(m - 1)}\right) \right)
 \right\},
-$$
+\end{gather*}
 
 with $\boldsymbol{b}(\boldsymbol{z})$ and $\boldsymbol{c}(\boldsymbol{z})$ being the $\boldsymbol{b}$ and $\boldsymbol{c}$ defined in exercise 1.
 Again, we can use the sparse, canonical representation in the implementation
@@ -474,14 +474,14 @@ enframe(alpha) %>%
     breaks = seq(0.0, 1.0, by = binwidth)
   ) +
   geom_vline(aes(xintercept = mean(alpha), color="alpha mean")) +
-  ylab("frequency") +
+  ylab("relative frequency") +
   xlab(expression(alpha)) +
   labs(title = "Histogram of calculated acceptance probabilities")
 ```
 
 As can be seen the histogram in figure \ref{fig:alphas}, most of the acceptance probabilities are very close to $1$.
 The density of observed acceptance probabilities gradually decline towards $0$.
-This can be considered to be a good result, since a sufficient amount of proposal samples are expected to be accepted.
+This can be considered to be a good result, since a satisfactory amount of proposal samples are expected to be accepted.
 
 # Exercise 3 - Convergence diagnostics
 
@@ -521,7 +521,7 @@ samples %>%
   labs(title = "Parameter trace plots")
 ```
 
-By observing figure \ref{fig:trace_plots}, we can observe that all 8 parameters portray a "band-like" shape, which is a good indication for convergence.
+By observing figure \ref{fig:trace_plots} on the next page, we can see that all 8 parameters portray a "band-like" shape, which is a good indication for convergence.
 Additionally, there is no indication of the parameters becoming "stuck" at any point during the iterations, and the chains mixes properly.
 The samples of the three $\boldsymbol{v}$-components seem to be symmetrically distributed around $0$, which is what we would expect to see from these unstructured white-noise parameters.
 
@@ -565,7 +565,7 @@ From figure \ref{fig:burnin} it becomes clear that all the 8 chains have probabl
 $\kappa_u$ starts off at $\simeq 25~000$ but has quickly started taking on a values in a more sensible region. It can be seen in table \ref{tab:posterior_means} that $\kappa_u$ ends up with a posterior mean of $\simeq 17$.
 
 This "zoomed in" plot also allows us to inspect the degree of movement of each chain to a better degree.
-For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation compared to the other parameters.
+For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of autocorrelation compared to the other parameters.
 The three $\boldsymbol{v}$ components show the greatest degree of variability in movement, and we would expect good results for these components in the upcoming ACF plots.
 
 ### 3b) Autocorrelation plots
@@ -638,7 +638,9 @@ geweke_results <- tibble(
   p_value = p_values
 )
 geweke_results %>%
-  kable(caption = "\\label{tab:geweke} The Z-statistic and corresponding p-values for the Geweke test on the eight parameters of interest.")
+  kable(
+    caption = "\\label{tab:geweke}The Z-statistic and corresponding p-values for the Geweke test on the eight parameters of interest."
+  )
 ```
 
 The results in table \ref{tab:geweke} are promisising, as not a single null hypothesis needs to be discarded even at $10\%$ significance.
@@ -693,17 +695,18 @@ The \texttt{effectiveSize()} function from the \texttt{coda} R-library can be us
 ESS <- effectiveSize(usable_samples)
 ESS %>%
   kable(
-    caption = "\\label{tab:ESS}Effective number of samples for our 8 paramaters of interest."
+    caption = "\\label{tab:ESS}Effective number of samples for our 8 paramaters of interest.",
+    col.names = c("ESS")
   )
 ```
 
-Table \ref{tab:ESS} tells us that it is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $1156$ and $626$ samples, respectively, in order to obtain parameter estimates with the *same* precision as if we used our MCMC samples of size $70~000$. This is less than $2\%$ of the MCMC sample size, $M$.
+Table \ref{tab:ESS} tells us that it is estimated that independent samplers for $\kappa_u$ and $\kappa_v$ would only require $1156$ and $627$ samples, respectively, in order to obtain parameter estimates with the *same* precision as if we used our MCMC samples of size $70~000$. This is less than $2\%$ of the MCMC sample size, $M$.
 
 With other words, an independent sampler that runs 50 times as slow as our MCMC implementation would therefore be of approximately equal benefit as our MCMC implementation, not considering memory usage and burn-in periods.
 
 ### Possible improvements for the ESS values
 
-Large values for ESS is to be preferred, and there are several strategies that can be devised in order to improve the value for ESS, for instance
+Large values for ESS are to be preferred, and there are several strategies that can be devised in order to improve the value for ESS, for instance
 
 \begin{itemize}
   \item Combine the results of \textit{multiple} independent chains. Compare the results in order to check convergence and if they mix properly.
@@ -744,9 +747,9 @@ $$
 \lambda_i = E_i \exp(\eta_i) = E_i \exp(u_i + v_i) \propto \exp(u_i),
 $$
 
-with other words, $u_i$ has a multiplicative effect on the expected numbers of oral cavity cancer occurrences in each German district during the 5-year period. Large values for $\hat{u}_i$ indicate some underlying regional effect which may contribute to increased cancer rates. If this is of environmental-, socio-economic, or some other nature is unknown to us, as there are too many correlational effects between place of residence and other factors. Such correlations could be quality of life, health service quality, income, age structure of the population, and so on.
+with other words, $u_i$ has a multiplicative effect on the expected rate of oral cavity cancer in each German district during the 5-year period. Large values for $\hat{u}_i$ indicate some underlying regional effect which may contribute to increased cancer rates. If this is of environmental-, socio-economic, or some other nature is unknown to us, as there are too many correlational effects between place of residence and other factors. Such correlations could be quality of life, health service quality, income, age structure of the population, and so on.
 
-The standardised mortality rates (SMR) $y_i / E_i$ can be visualized on top of the map of Germany's districts and compared to the spatially structured effects, $\hat{u}_i$, side-by-side.
+The standardised mortality rates (SMR), $y_i / E_i$, can be visualized on top of the map of Germany's districts and compared to the spatially structured effects, $\hat{u}_i$, side-by-side.
 
 ```{r spatial_effect_plot, fig.fullwidth = TRUE, fig.cap = "\\label{fig:germany} On the left hand side, the standardized mortality rates are plotted. While on the right hand side, a plot of the spatially structured effects on oral cancer rates in Germany."}
 # Calculate the posterior median of exp(u)
@@ -761,21 +764,23 @@ exp_u_median <- result$u %>%
 col <- diverge_hcl(8)
 
 # Put the next to figures side-by-side
-par(mfcol=c(1, 2))
+par(mfcol = c(1, 2))
 
 germany.plot(
   Oral$Y / Oral$E,
   col=col,
   legend=TRUE,
-  main = bquote("Standardized mortality rates: "~y_i / E[i]),
-  cex.mai = 0.9
+  main = bquote(y[i] / E[i]),
+  cex.mai = 2,
+  cex.axis = 0.5
 )
 germany.plot(
   exp_u_median,
   col = col,
   legend = TRUE,
-  main = bquote("Structured spatial effects: "~e^u[i]),
-  cex.main = 0.9
+  main = bquote(e^hat(u)[i]),
+  cex.main = 2,
+  cex.axis = 0.5
 )
 ```
 
