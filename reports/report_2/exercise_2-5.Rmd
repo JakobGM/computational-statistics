@@ -545,7 +545,8 @@ These values can be compared to the burn-in trace plots in the upcoming section.
 #### Burn-in period
 
 Let's try to justify our earlier assumption of a burn-in period of $1~000$ steps being more than sufficient.
-We will plot trace plots for the first $2~000$ steps.
+Keep in mind that convergence can not be \textit{proved}, but we will present several different diagnostics that will strengthen our confidence in that the MCMC algorithm has converged.
+First, we will plot trace plots for the first $2~000$ steps.
 
 ```{r, fig.width = 8.3, fig.height = 8, fig.fullwidth=TRUE, fig.cap = "\\label{fig:burnin} Sample line plot for beginning steps of the MCMC algorithm (burn-in). The red line indicates the chosen burn-in boundary."}
 beginning <- seq(1, 2 * burnin)
@@ -560,8 +561,8 @@ samples %>%
 ```
 
 \newpage
-From figure \ref{fig:burnin} it becomes clear that all the 8 chains have converged long before a thousand steps (red vertical line) have been calculated.
-$\kappa_u$ starts off at $\simeq 25~000$ but has quickly started taking on a values in a more sensible region. It can be seen in table \ref{tab:posterior_means} that $\kappa_u$ ends up with a posterior mean of $\sim 17$.
+From figure \ref{fig:burnin} it becomes clear that all the 8 chains have probably converged long before a thousand steps (red vertical line) have been calculated.
+$\kappa_u$ starts off at $\simeq 25~000$ but has quickly started taking on a values in a more sensible region. It can be seen in table \ref{tab:posterior_means} that $\kappa_u$ ends up with a posterior mean of $\simeq 17$.
 
 This "zoomed in" plot also allows us to inspect the degree of movement of each chain to a better degree.
 For instance, the $\kappa_v$ sample plot is the most "sticky" of them all, and will probably show a greater degree of auto-correlation compared to the other parameters.
