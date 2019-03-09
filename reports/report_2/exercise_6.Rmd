@@ -18,7 +18,7 @@ library(INLA)
 
 ### Preparing the data
 
-The same dataset will be used, but we need to duplicate the region covariate, since `INLA` forces us to have seperate covariate names for the unstructured and structured covariates.
+The same dataset will be used, but we need to duplicate the region covariate, since `INLA` forces us to have separate covariate names for the unstructured and structured covariates.
 
 ```{r}
 attach(Oral)
@@ -64,8 +64,8 @@ formula <- Y ~
 ### Invoking `INLA` and retrieving the results
 
 Finally, we can invoke the `inla` function in order to approximate our model parameters.
-We must specify a poisson response distribution, and include our known component of the Poisson mean, $E$.
-Calculation of the deviance information criterior (DIC) will also come to use later.
+We must specify a Poisson response distribution, and include our known component of the Poisson mean, $E$.
+Calculation of the deviance information criterion (DIC) will also come to use later.
 
 ```{r}
 inla_result <- inla(
@@ -180,7 +180,7 @@ germany.plot(
 )
 ```
 
-There is no discernable difference between the results from `INLA` and the results from our MCMC samples in figure \ref{fig:inla_germany}.
+There is no discernible difference between the results from `INLA` and the results from our MCMC samples in figure \ref{fig:inla_germany}.
 
 ## b) Smoking as new covariate
 

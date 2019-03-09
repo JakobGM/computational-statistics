@@ -643,7 +643,7 @@ geweke_results %>%
   )
 ```
 
-The results in table \ref{tab:geweke} are promisising, as not a single null hypothesis needs to be discarded even at $10\%$ significance.
+The results in table \ref{tab:geweke} are promising, as not a single null hypothesis needs to be discarded even at $10\%$ significance.
 In the case of convergence we would expect the $p$-values to be uniformly distributed between zero and one, i.e. $p \sim \mathcal{U}(0, 1)$. We can check if this is really the case for all $\boldsymbol{u}$ and $\boldsymbol{v}$ components by plotting a $p$-value histogram for both decompositions.
 
 ```{r p_values_plot, fig.fullwidth = TRUE, fig.cap = "\\label{fig:p_values_plot} Histograms for the p-values of the Geweke tests for all components of u and v."}
@@ -695,7 +695,7 @@ The \texttt{effectiveSize()} function from the \texttt{coda} R-library can be us
 ESS <- effectiveSize(usable_samples)
 ESS %>%
   kable(
-    caption = "\\label{tab:ESS}Effective number of samples for our 8 paramaters of interest.",
+    caption = "\\label{tab:ESS}Effective number of samples for our 8 parameters of interest.",
     col.names = c("ESS")
   )
 ```
