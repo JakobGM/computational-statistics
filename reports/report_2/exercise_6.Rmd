@@ -275,9 +275,9 @@ According to the DIC heuristic, the original model without `smoking` as a covari
 
 ### Credible intervals
 
-95\% credibility intervals are obtained by finding the 2.5th and 97.5th percentiles of the estimated marginals of $x_i$. This is done below, and the result are plotted for all the different components. Note that $\boldsymbol{x}$ only contains 85 unique values, resulting cases where multiple components of $\boldsymbol{x}$ share the same marginal distribution.
+95\% credibility intervals are obtained by finding the 2.5th and 97.5th percentiles of the estimated marginals of $x_i$. This is done below, and the result are plotted for all the different components. Note that $\boldsymbol{x}$ only contains 85 unique values, resulting in cases where multiple components of $\boldsymbol{x}$ share the same marginal distribution.
 
-```{r, fig.cap = "\\label{fig:credible_interval} Lines corresponding to the median, 97.5th percentile and 2.5th percentile of the different $\\boldsymbol{x}$ - components plotted together with estimated linear smoking effect"}
+```{r, fig.cap = "\\label{fig:credible_interval} Lines corresponding to the median, 97.5th percentile and 2.5th percentile of the different $\\boldsymbol{x}$ - components plotted with colors; effect values specified by the left axis. The dashed black line shows the \\textit{slope} of the linear smoking effect in the alternative model for comparison; linear effect values specified by the right axis. The two $y$-axes are offset by 0.25 for comparison purposes."}
 smoking_marginals <- nonlinear_inla_result$marginals.random$smoking
 
 smoking_summary <- nonlinear_inla_result$summary.random$smoking
@@ -309,9 +309,12 @@ posterior_median %>%
     colour = "black"
   ) +
   xlab("Smoking value") +
-  ylab("Effect")
+  scale_y_continuous(
+    name = "RW2 effect",
+    sec.axis = sec_axis(~.+0.25, name = "Linear effect")
+  )
 ```
 
-It can be observed from figure \ref{fig:credible_interval} that the effect of the smoking variable changes rapidly for small values of $x_{smoke}$, remains almost constant for until $x_{smoke} \approx 50$ and then changes rapidly again as the value moves towards 100. The linear curve captures the increased effect from increased values, but does not enable the same degree of flexibility as the random walk model. 
+It can be observed from figure \ref{fig:credible_interval} that the effect of the smoking variable changes rapidly for small values of $x_{smoke}$, remains almost constant for until $x_{smoke} \approx 50$ and then changes rapidly again as the value approaches towards 100. The linear curve captures the increased effect from increased values, but does not enable the same degree of flexibility as the random walk model.
 
 Table \ref{tab:DIC} shows that there's a considerable benefit to adding the effect of smoking to the model. The DIC for two the smoking models are almost identical, and does, on it's own, not suggest that one of the models should be preferred to the other. It's worth noting that the added flexibility of the random walk model is not sufficient to make the DIC smaller and that the simpler, linear model could therefore be to prefer.
