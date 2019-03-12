@@ -625,7 +625,7 @@ We can now perform the following hypothesis test
 This is a two-tailed hypothesis test, for which we can calculate a corresponding $p$-value for
 
 $$
-p\text{-value} = 2 \cdot \text{P}(Z \geq |z|)
+p\text{-value} = \text{P}(|Z| \geq |z|)
 $$
 
 This is what we will now calculate. A rejected null hypothesis in this case implies *non-convergence*.
