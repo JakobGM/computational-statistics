@@ -1,1 +1,53 @@
-Test B
+```{r}
+library(tidyverse)
+library(broom)
+bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
+  read.table(header=T) %>%
+  as_tibble()
+
+bilirubin %>%
+  mutate(log_meas = log(meas)) %>%
+  ggplot(aes(x=pers, y=log_meas)) +
+  geom_boxplot()
+
+linear_model <- lm(log(meas)~pers, data=bilirubin)
+
+summary(linear_model)
+
+Fval <- linear_model %>%
+  glance() %>%
+  pull(statistic)
+```
+```{r}
+permTest <- function(df){
+  perm_df <- tibble(meas = df %>%
+                      pull(meas) %>% 
+                      sample(),
+                    pers = df %>% 
+                      pull(pers) %>% 
+                      sample()
+  )
+  lm(log(meas)~pers, data=perm_df) %>% 
+    glance() %>% 
+    pull(statistic)
+}
+
+permTest(bilirubin)
+
+permTest_df <- tibble(run = seq(1, 999),
+                      F_stat = 999 %>%
+                        rerun(permTest(bilirubin))) %>%
+  unnest()
+
+perc_95 <- permTest_df %>%
+  pull(F_stat) %>% 
+  quantile(probs = c(0.95))
+
+permTest_df %>%
+  ggplot(aes(x=F_stat)) +
+  geom_histogram(bins=50) +
+  geom_vline(aes(xintercept=perc_95), color="red") +
+  geom_vline(aes(xintercept=Fval), color="green")
+```
+
+

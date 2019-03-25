@@ -5,9 +5,9 @@ author:
 - "Jakob Gerhard Martinussen"
 date: "Spring 2019"
 output:
-  pdf_document:
-    fig_caption: yes
   html_document:
+    fig_caption: yes
+  pdf_document:
     fig_caption: yes
 ---
 
