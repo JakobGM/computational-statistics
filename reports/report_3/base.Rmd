@@ -8,7 +8,9 @@ output:
   html_document:
     fig_caption: yes
   pdf_document:
+    latex_engine: xelatex
     fig_caption: yes
+    keep_tex: true
 ---
 
 ```{r setup, include=FALSE}
