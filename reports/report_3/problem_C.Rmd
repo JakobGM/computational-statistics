@@ -15,7 +15,7 @@ Let $\vec{x} := [x_1, ..., x_n]$ and $\vec{y} := [y_1, ..., y_n]$ be two collect
 \end{align*}
 
 Denote the probability density functions of these distributions as $f_x(x | \lambda_0)$ and $f_y(y | \lambda_1)$ respectively.
-Now assume that we do not observe $\vec{x}$ and $\vec{y}$ directly, but rather
+Now assume that we do not observe $\vec{x}$ and $\vec{y}$ directly, but rather $\vec{z} := [z_1, ..., z_n]$ and $\vec{u} := [u_1, ..., u_n]$, which are constructed as
 
 \begin{align*}
   z_i &= \text{max}(x_i, y_i) \\
@@ -65,7 +65,7 @@ Thus the log likelihood becomes
   \label{eq:loglik}
 \end{gather}
 
-We can now calculate the expected value of the log likelihood given $z$, $u$, $\lambda_0^{(t)}$, $\lambda_1^{(t)}$.
+We can now calculate the expected value of the log likelihood given $\vec{z}$, $\vec{u}$, $\lambda_0^{(t)}$, $\lambda_1^{(t)}$.
 First we calculate the conditional expectation of the first term of \eqref{eq:loglik}:
 
 \begin{equation}
@@ -73,7 +73,7 @@ First we calculate the conditional expectation of the first term of \eqref{eq:lo
   \text{E} \left[
     n (\ln{\lambda_0} + \ln{\lambda_1})
     ~|~
-    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
   =
   n (\ln{\lambda_0^{(t)}} + \ln{\lambda_1^{(t)}}).
@@ -85,14 +85,14 @@ For the conditional expectation of $x_i$, notice that
   \text{E} \left[
     x_i
     ~|~
-    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
   =
   \begin{cases}
     z_i &\text{if } u_i = 1 \\
     %
     \text{E}\left[
-      x_i ~|~ x_i < z_i, z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+      x_i ~|~ x_i < z_i, \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
     \right]
     &\text{otherwise.}
   \end{cases} \\
@@ -102,7 +102,7 @@ For the conditional expectation of $x_i$, notice that
     +
     (1 - u_i)
     \text{E}\left[
-      x_i ~|~ x_i < z_i, z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+      x_i ~|~ x_i < z_i, \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
     \right]
 \end{align*}
 
@@ -113,7 +113,7 @@ For the $u_i = 0$ case we can calculate the expected value by integration:
   \text{E}\left[
     x_i
     ~\middle|~
-    x_i < z_i, z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    x_i < z_i, \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right] \\
   =
     \frac{
@@ -150,7 +150,7 @@ Using $u_i$ we can now write the conditional expectation of the second term in \
   E\left[
     \lambda_0 \sum_{i = 1}^n x_i
     ~\middle|~
-    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
   =
     \lambda_0 \sum_{i = 1}^n \left[
@@ -172,7 +172,7 @@ Using the symmetry of the problem we can find the conditional expectation of the
   E\left[
     \lambda_1 \sum_{j = 1}^n y_j
     ~\middle|~
-    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
   =
     \lambda_1 \sum_{j = 1}^n \left[
@@ -193,7 +193,7 @@ We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:
   E\left[
     l(\vec{x}, \vec{y} ~|~ \lambda_0, \lambda_1)
     ~\middle|~
-    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
   &=
     n (\ln{\lambda_0^{(t)}} + \ln{\lambda_1^{(t)}}) \\
