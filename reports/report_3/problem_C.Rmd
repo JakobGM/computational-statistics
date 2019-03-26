@@ -1,1 +1,65 @@
-Test C
+# Problem C: The EM-algorithm and bootstrapping
+
+```{r, include = FALSE}
+# Include parent to get its headers
+set_parent("base.Rmd")
+```
+
+## Description
+
+Let $\vec{x} := [x_1, ..., x_n]$ and $\vec{y} := [y_1, ..., y_n]$ be two collections of independent random variables from two independent exponential distributions
+
+\begin{align*}
+  x_1, ..., x_n &\sim \text{exp}(\lambda_0) \\
+  y_1, ..., y_n &\sim \text{exp}(\lambda_1).
+\end{align*}
+
+Denote the probability density functions of these distributions as $f_x(x | \lambda_0)$ and $f_y(y | \lambda_1)$ respectively.
+Now assume that we do not observe $\vec{x}$ and $\vec{y}$ directly, but rather
+
+\begin{align*}
+  z_i &= \text{max}(x_i, y_i) \\
+  u_i &= I(x_i \leq y_i) \\
+\end{align*}
+
+for $i = 1, ..., n$ and where $I$ is the indicator function.
+
+## Complete data log likelihood function
+
+The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
+
+\begin{gather*}
+  L(\vec{x}, \vec{y} | \lambda_0, \lambda_0) \\
+  =
+    \prod_{i = 1}^n f_x(x_i | \lambda_0)
+    \cdot
+    \prod_{j = 1}^n f_y(y_j | \lambda_1) \\
+  =
+    \prod_{i = 1}^n \lambda_0 e^{-\lambda_0 x_i}
+    \cdot
+    \prod_{j = 1}^n \lambda_1 e^{-\lambda_1 y_i} \\
+  =
+    (\lambda_0 \lambda_1)^n
+    \cdot
+    \text{exp}
+      \left\{
+      -\lambda_0 \sum_{i = 1}^n x_i
+      \right\}
+    \cdot
+    \text{exp}
+      \left\{
+      -\lambda_1 \sum_{j = 1}^n y_j
+      \right\}
+\end{gather*}
+
+Thus the log likelihood becomes
+
+\begin{gather*}
+  l(\vec{x}, \vec{y} | \lambda_0, \lambda_1)
+  :=
+  \ln{L(\vec{x}, \vec{y} | \lambda_0, \lambda_1)} \\
+  =
+  n (\ln{\lambda_0} + \ln{\lambda_1})
+  - \lambda_0 \sum_{i = 1}^n x_i
+  - \lambda_1 \sum_{j = 1}^n y_j.
+\end{gather*}
