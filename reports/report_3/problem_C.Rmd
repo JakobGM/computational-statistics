@@ -54,12 +54,169 @@ The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
 
 Thus the log likelihood becomes
 
-\begin{gather*}
+\begin{gather}
   l(\vec{x}, \vec{y} | \lambda_0, \lambda_1)
   :=
-  \ln{L(\vec{x}, \vec{y} | \lambda_0, \lambda_1)} \\
+  \ln{L(\vec{x}, \vec{y} | \lambda_0, \lambda_1)} \nonumber \\
   =
   n (\ln{\lambda_0} + \ln{\lambda_1})
   - \lambda_0 \sum_{i = 1}^n x_i
   - \lambda_1 \sum_{j = 1}^n y_j.
+  \label{eq:loglik}
+\end{gather}
+
+We can now calculate the expected value of the log likelihood given $z$, $u$, $\lambda_0^{(t)}$, $\lambda_1^{(t)}$.
+First we calculate the conditional expectation of the first term of \eqref{eq:loglik}:
+
+\begin{equation}
+  \label{eq:first}
+  \text{E} \left[
+    n (\ln{\lambda_0} + \ln{\lambda_1})
+    ~|~
+    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+  \right]
+  =
+  n (\ln{\lambda_0^{(t)}} + \ln{\lambda_1^{(t)}}).
+\end{equation}
+
+For the conditional expectation of $x_i$, notice that
+
+\begin{align*}
+  \text{E} \left[
+    x_i
+    ~|~
+    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+  \right]
+  =
+  \begin{cases}
+    z_i &\text{if } u_i = 1 \\
+    %
+    \text{E}\left[
+      x_i ~|~ x_i < z_i, z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    \right]
+    &\text{otherwise.}
+  \end{cases} \\
+  %
+  =
+    u_i z_i
+    +
+    (1 - u_i)
+    \text{E}\left[
+      x_i ~|~ x_i < z_i, z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+    \right]
+\end{align*}
+
+Here we have rewritten the cases by using $u_i$.
+For the $u_i = 0$ case we can calculate the expected value by integration:
+
+\begin{gather*}
+  \text{E}\left[
+    x_i
+    ~\middle|~
+    x_i < z_i, z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+  \right] \\
+  =
+    \frac{
+      \int_{x = 0}^{x = z_i} x f_x(x ~|~ \lambda_0^{(t)})\text{d}x
+    }{
+      \int_{x = 0}^{x = z_i} f_x(x ~|~ \lambda_0^{(t)})\text{d}x
+    } \\
+  %
+  =
+    \frac{
+      \int_{x = 0}^{x = z_i} \lambda_0 x e^{-\lambda_0 x} \text{d}x
+    }{
+      \int_{x = 0}^{x = z_i} \lambda_0 e^{-\lambda_0 x} \text{d}x
+    } \\
+  %
+  =
+    \frac{
+      1 - (\lambda_0^{(t)} z_i + 1) e^{-\lambda_0^{(t)} z_i}
+    }{
+      \lambda_0^{(t)}
+    }
+    \cdot
+    \frac{1}{1 - e^{-\lambda_0^{(t)} z_i}} \\
+  =
+    \frac{1}{\lambda_0^{(t)}}
+    -
+    \frac{z_i}{e^{\lambda_0^{(t)} z_i} - 1}
 \end{gather*}
+
+Using $u_i$ we can now write the conditional expectation of the second term in \eqref{eq:loglik} as
+
+\begin{equation}
+  \label{eq:second}
+  E\left[
+    \lambda_0 \sum_{i = 1}^n x_i
+    ~\middle|~
+    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+  \right]
+  =
+    \lambda_0 \sum_{i = 1}^n \left[
+      u_i z_i
+      +
+      (1 - u_i)
+      \left(
+        \frac{1}{\lambda_0^{(t)}}
+        -
+        \frac{z_i}{e^{\lambda_0^{(t)} z_i} - 1}
+      \right)
+    \right]
+\end{equation}
+
+Using the symmetry of the problem we can find the conditional expectation of the third term in \eqref{eq:loglik} as well
+
+\begin{equation}
+  \label{eq:third}
+  E\left[
+    \lambda_1 \sum_{j = 1}^n y_j
+    ~\middle|~
+    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+  \right]
+  =
+    \lambda_1 \sum_{j = 1}^n \left[
+      (1 - u_i) z_i
+      +
+      u_i
+      \left(
+        \frac{1}{\lambda_1^{(t)}}
+        -
+        \frac{z_i}{e^{\lambda_1^{(t)} z_i} - 1}
+      \right)
+    \right]
+\end{equation}
+
+We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:third} in order to get the conditional expectation of the log likelihood
+
+\begin{align*}
+  E\left[
+    l(\vec{x}, \vec{y} ~|~ \lambda_0, \lambda_1)
+    ~\middle|~
+    z, u, \lambda_0^{(t)}, \lambda_1^{(t)}
+  \right]
+  &=
+    n (\ln{\lambda_0^{(t)}} + \ln{\lambda_1^{(t)}}) \\
+  &-
+    \lambda_0 \sum_{i = 1}^n \left[
+      u_i z_i
+      +
+      (1 - u_i)
+      \left(
+        \frac{1}{\lambda_0^{(t)}}
+        -
+        \frac{z_i}{e^{\lambda_0^{(t)} z_i} - 1}
+      \right)
+    \right] \\
+  &-
+    \lambda_1 \sum_{j = 1}^n \left[
+      (1 - u_i) z_i
+      +
+      u_i
+      \left(
+        \frac{1}{\lambda_1^{(t)}}
+        -
+        \frac{z_i}{e^{\lambda_1^{(t)} z_i} - 1}
+      \right)
+    \right]
+\end{align*}
