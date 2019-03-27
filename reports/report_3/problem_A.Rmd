@@ -72,7 +72,7 @@ calculate_beta_la <- as_mapper(~ ARp.beta.est(.x, 2)$LA)
 
 bootstrapped_beta_ls <- resampled_xs_ls %>%
   map(calculate_beta_ls) %>%
-  map(set_names, nm = c("beta1", "beta2")) %>%
+  map(purrr::set_names, nm = c("beta1", "beta2")) %>%
   transpose() %>%
   as_tibble() %>%
   unnest()
@@ -85,7 +85,7 @@ bootstrapped_beta_ls %>%
 
 bootstrapped_beta_la <- resampled_xs_la %>%
   map(calculate_beta_la) %>%
-  map(set_names, nm = c("beta1", "beta2")) %>%
+  map(purrr::set_names, nm = c("beta1", "beta2")) %>%
   transpose() %>%
   as_tibble() %>%
   unnest()
@@ -97,6 +97,7 @@ bootstrapped_beta_la %>%
   facet_wrap(~key, scales = "free_x")
 ```
 
+```{r}
 sample_x <- function(beta1, beta2, pi, x) {
   return(sample(beta2, 1) * x[99] + sample(beta1, 1) * x[100] + sample(pi, 1))
 }
@@ -106,9 +107,68 @@ ls_sample_x <- partial(sample_x, pi=ls_pi, x = x)
   
 x_samples <- map2_dbl(bootstrapped_beta_ls$beta1, bootstrapped_beta_ls$beta2, ls_sample_x)
 
-ggplot(enframe(x, name = "t", value = "x")) +
-  geom_line(aes(x = t, y = x)) +
-  geom_violin(aes(x=101, y= ))
+enframe(x_samples, name="index") %>%
+  ggplot() +
+  geom_histogram(aes(x=value), bins=50)
+
+
+x_df <- enframe(x, name="index") %>% 
+  bind_rows(
+    tibble(
+      index=rep(101, length(x_samples)),
+      value = x_samples
+    )
+  ) 
+
+x_summary_df <- x_df %>%
+  group_by(index) %>%
+  summarise(
+    mean = mean(value),
+    lq = quantile(value, 0.025),
+    uq = quantile(value, 0.975)
+  )
+
+x_summary_df %>% 
+  ggplot(aes(x=index)) + 
+  geom_linerange(aes(ymin=lq, ymax=uq)) +
+  geom_line(aes(y=mean))
+
+x_summary_df %>% filter(index == 101) %>% select(lq, uq) %>% knitr::kable()
+```
+```{r}
+la_sample_x <- partial(sample_x, pi=la_pi, x = x)
+  
+  
+x_samples <- map2_dbl(bootstrapped_beta_la$beta1, bootstrapped_beta_la$beta2, ls_sample_x)
+
+enframe(x_samples, name="index") %>%
+  ggplot() +
+  geom_histogram(aes(x=value), bins=50)
+
+
+x_df <- enframe(x, name="index") %>% 
+  bind_rows(
+    tibble(
+      index=rep(101, length(x_samples)),
+      value = x_samples
+    )
+  ) 
+
+x_summary_df <- x_df %>%
+  group_by(index) %>%
+  summarise(
+    mean = mean(value),
+    lq = quantile(value, 0.025),
+    uq = quantile(value, 0.975)
+  )
+
+x_summary_df %>% 
+  ggplot(aes(x=index)) + 
+  geom_linerange(aes(ymin=lq, ymax=uq)) +
+  geom_line(aes(y=mean))
+
+x_summary_df %>% filter(index == 101) %>% select(lq, uq) %>% knitr::kable()
+```
 
 
 
