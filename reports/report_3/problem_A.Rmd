@@ -1,1 +1,114 @@
-Test A
+```{r}
+knitr::set_parent("base.Rmd")
+
+source(here::here("reports", "report_3", "data", "probAhelp.R"))
+source(here::here("reports", "report_3", "data", "probAdata.R"))
+```
+
+```{r}
+library(magrittr)
+library(tidyverse)
+library(purrr)
+
+x <- data3A$x
+
+beta <- ARp.beta.est(x, 2)
+
+estimate_pseudo_innovations <- function(beta, x) {
+  L <- length(x)
+  xs <- list(
+    xt = x[seq(3, L)],
+    xt1 = x[seq(2, L - 1)],
+    xt2 = x[seq(1, L - 2)]
+  )
+
+  i <- xs %>%
+    pmap_dbl(function(xt, xt1, xt2)
+      xt - beta[1] * xt1 - beta[2] * xt2)
+
+  pi <- i %>%
+    subtract(mean(i))
+  return(pi)
+}
+
+ls_pi <- estimate_pseudo_innovations(beta$LS, x)
+la_pi <- estimate_pseudo_innovations(beta$LA, x)
+
+ggplot(enframe(x, name = "t", value = "x")) +
+  geom_line(aes(x = t, y = x))
+
+calculate_xt <- function(beta, xt1, xt2, pi) {
+  beta[1] * xt1 + beta[2] * xt2 + pi
+}
+
+resample_x <- function(pseudo_innovations, beta, x) {
+  L <- length(x)
+  rs_pi <- sample(pseudo_innovations,
+    L - 2,
+    replace = TRUE
+  )
+
+  init_index <- sample(seq(1, L - 1), 1)
+  init_x <- x[init_index:(init_index + 1)]
+  xt2 <- init_x[1]
+  xt1 <- init_x[2]
+  resampled_x <- init_x
+  for (i in 1:(L - 2)) {
+    xt <- calculate_xt(beta, xt1, xt2, rs_pi[i])
+    resampled_x <- c(resampled_x, xt)
+    xt2 <- resampled_x[i + 1]
+    xt1 <- resampled_x[i + 2]
+  }
+
+  return(resampled_x)
+}
+
+B <- 10000
+resampled_xs_ls <- B %>% rerun(resample_x(ls_pi, beta$LS, x))
+resampled_xs_la <- B %>% rerun(resample_x(la_pi, beta$LA, x))
+
+calculate_beta_ls <- as_mapper(~ ARp.beta.est(.x, 2)$LS)
+calculate_beta_la <- as_mapper(~ ARp.beta.est(.x, 2)$LA)
+
+bootstrapped_beta_ls <- resampled_xs_ls %>%
+  map(calculate_beta_ls) %>%
+  map(set_names, nm = c("beta1", "beta2")) %>%
+  transpose() %>%
+  as_tibble() %>%
+  unnest()
+
+bootstrapped_beta_ls %>%
+  gather() %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(bins = 100) +
+  facet_wrap(~key, scales = "free_x")
+
+bootstrapped_beta_la <- resampled_xs_la %>%
+  map(calculate_beta_la) %>%
+  map(set_names, nm = c("beta1", "beta2")) %>%
+  transpose() %>%
+  as_tibble() %>%
+  unnest()
+
+bootstrapped_beta_la %>%
+  gather() %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(bins = 100) +
+  facet_wrap(~key, scales = "free_x")
+```
+
+sample_x <- function(beta1, beta2, pi, x) {
+  return(sample(beta2, 1) * x[99] + sample(beta1, 1) * x[100] + sample(pi, 1))
+}
+
+ls_sample_x <- partial(sample_x, pi=ls_pi, x = x)
+  
+  
+x_samples <- map2_dbl(bootstrapped_beta_ls$beta1, bootstrapped_beta_ls$beta2, ls_sample_x)
+
+ggplot(enframe(x, name = "t", value = "x")) +
+  geom_line(aes(x = t, y = x)) +
+  geom_violin(aes(x=101, y= ))
+
+
+

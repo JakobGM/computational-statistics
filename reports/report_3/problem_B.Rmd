@@ -1,6 +1,10 @@
+```{r, include=FALSE}
+knitr::set_parent("base.Rmd")
+```
 ```{r}
 library(tidyverse)
 library(broom)
+library(tibble)
 bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
   read.table(header=T) %>%
   as_tibble()
@@ -48,6 +52,13 @@ permTest_df %>%
   geom_histogram(bins=50) +
   geom_vline(aes(xintercept=perc_95), color="red") +
   geom_vline(aes(xintercept=Fval), color="green")
+
+p_value <- permTest_df %>%
+  pull(F_stat) %>%
+  map_lgl(~.x >= Fval) %>%
+  mean()
+
+p_value
 ```
 
 
