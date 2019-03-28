@@ -29,7 +29,7 @@ for $i = 1, ..., n$ and where $I$ is the indicator function.
 The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
 
 \begin{gather*}
-  L(\vec{x}, \vec{y} | \lambda_0, \lambda_0) \\
+  L(\lambda_0, \lambda_0; \vec{x}, \vec{y}) \\
   =
     \prod_{i = 1}^n f_x(x_i | \lambda_0)
     \cdot
@@ -55,9 +55,9 @@ The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
 Thus the log likelihood becomes
 
 \begin{gather}
-  l(\vec{x}, \vec{y} | \lambda_0, \lambda_1)
+  l(\lambda_0, \lambda_1; \vec{x}, \vec{y})
   :=
-  \ln{L(\vec{x}, \vec{y} | \lambda_0, \lambda_1)} \nonumber \\
+  \ln{L(\lambda_0, \lambda_1; \vec{x}, \vec{y})} \nonumber \\
   =
   n (\ln{\lambda_0} + \ln{\lambda_1})
   - \lambda_0 \sum_{i = 1}^n x_i
@@ -191,7 +191,7 @@ We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:
 
 \begin{align*}
   E\left[
-    l(\vec{x}, \vec{y} ~|~ \lambda_0, \lambda_1)
+    l(\lambda_0, \lambda_1; \vec{x}, \vec{y})
     ~\middle|~
     \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
