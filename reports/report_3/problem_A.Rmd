@@ -1,14 +1,47 @@
-```{r}
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r, include=FALSE}
 knitr::set_parent("base.Rmd")
 
 source(here::here("reports", "report_3", "data", "probAhelp.R"))
 source(here::here("reports", "report_3", "data", "probAdata.R"))
-```
 
-```{r}
 library(magrittr)
 library(tidyverse)
 library(purrr)
+```
+## Problem A
+
+### A1
+
+
+We start off by using the supplied function to estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$.
+
+The innovations $\hat{e}_t$ can be estimated by 
+
+$$
+\hat{e}_t = x_t - \hat{\beta}_1x_{t-1} - \hat{\beta}_2x_{t-2},\ t = 3,\ldots,T
+$$
+The innovations are estimated using either $\vec{\beta}_{LS}$ or $\vec{\beta}_{LA}$. We will denote the different estimated innovations by $\hat{e}_t^{LS}$ and $\hat{e}_t^{LA}$.
+
+The estimated innovations $\hat{\epsilon}_t$ are then centered by calculating 
+
+$$
+\hat{\epsilon}_t = \hat{e}_t - \bar{e}
+$$
+We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\vec{\beta}_{LS}$ and $\vec{\beta}_{LS}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
+
+$$
+x_t = \hat{\beta}_1x_{t-1} + \hat{\beta}_2x_{t-2} + \hat{\epsilon},
+$$
+where $\epsilon$ is chosen randomly from either the set $\{\hat{\epsilon}_3^{LS}, \ldots, \hat{\epsilon}_T^{LS}\}$ or $\{\hat{\epsilon}^{LA}_3, \ldots, \hat{\epsilon}_T^{LA}\}$. 
+
+For each of the $B$ resampled data sequences we estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. A histogram showing the obtained values is shown in Figure $\ref{fig:1}$ and $\ref{fig:2}$.
+
+```{r, fig.cap=c("\\label{fig:1} Histogram of $\\vec{\\beta}_{LS}$ estimated from each of the $B$ bootstrap samples", "\\label{fig:2} Histogram of $\\vec{\\beta}_{LA}$ estimated from each of the $B$ bootstrap samples")}
 
 x <- data3A$x
 
@@ -33,9 +66,6 @@ estimate_pseudo_innovations <- function(beta, x) {
 
 ls_pi <- estimate_pseudo_innovations(beta$LS, x)
 la_pi <- estimate_pseudo_innovations(beta$LA, x)
-
-ggplot(enframe(x, name = "t", value = "x")) +
-  geom_line(aes(x = t, y = x))
 
 calculate_xt <- function(beta, xt1, xt2, pi) {
   beta[1] * xt1 + beta[2] * xt2 + pi
@@ -63,7 +93,7 @@ resample_x <- function(pseudo_innovations, beta, x) {
   return(resampled_x)
 }
 
-B <- 10000
+B <- 1500
 resampled_xs_ls <- B %>% rerun(resample_x(ls_pi, beta$LS, x))
 resampled_xs_la <- B %>% rerun(resample_x(la_pi, beta$LA, x))
 
@@ -78,7 +108,7 @@ bootstrapped_beta_ls <- resampled_xs_ls %>%
   unnest()
 
 bootstrapped_beta_ls %>%
-  gather() %>%
+  gather() %>% 
   ggplot(aes(x = value)) +
   geom_histogram(bins = 100) +
   facet_wrap(~key, scales = "free_x")
@@ -91,15 +121,96 @@ bootstrapped_beta_la <- resampled_xs_la %>%
   unnest()
 
 bootstrapped_beta_la %>%
-  gather() %>%
+  gather() %>% 
   ggplot(aes(x = value)) +
   geom_histogram(bins = 100) +
   facet_wrap(~key, scales = "free_x")
 ```
 
+The bias can be calculated as
+
+$$
+\widehat{\text{bias}}_B = \hat{\beta}^{\star}(\cdot) - \hat{\beta},
+$$
+and is shown in Table $\ref{tab:ls_bias}$ and $\ref{tab:la_bias}$.
+
+The variance can be calculated as
+
+$$
+\widehat{SE}_B^2 = \frac{\sum_{b=1}^B\left(\hat{\beta}^{\star}(b) - \hat{\beta}^{\star}(\cdot)\right)}{B-1}
+$$
+and is shown in Table $\ref{tab:ls_var}$ and $\ref{tab:la_var}$.
+
+The estimated variance for $\hat{\beta}_{LS}$ is a lot higher than for $\hat{\beta}_{LA}$. In addition, the bias seems to be very similar for the two estimators. It's therefore clear that the LS estimator is not optimal for the non-Gaussian time-series in this problem, seeing as the LA estimator performs better. 
 ```{r}
+la_bias <- list(
+  beta1_bias = bootstrapped_beta_la %>%
+    pull(beta1) %>% 
+    mean() %>% 
+    subtract(beta$LA[[1]]),
+  beta2_bias = bootstrapped_beta_la %>%
+    pull(beta2) %>% 
+    mean() %>% 
+    subtract(beta$LA[[2]])  
+)
+
+ls_bias <- list(
+  beta1_bias = bootstrapped_beta_ls %>%
+    pull(beta1) %>% 
+    mean() %>% 
+    subtract(beta$LS[[1]]),
+  beta2_bias = bootstrapped_beta_ls %>%
+    pull(beta2) %>% 
+    mean() %>% 
+    subtract(beta$LS[[2]])  
+)
+
+la_bias %>% 
+  as_tibble() %>%
+  knitr::kable(
+    caption = "\\label{tab:la_bias}  Estimated LA bias",
+    col.names = c("Bias of $\\hat{\\beta}_1^{LA}$", "Bias of $\\hat{\\beta}_2^{LA}$")
+  )
+
+bootstrapped_beta_la %>%
+  select(beta1, beta2) %>%
+  summarize(
+    beta1_var = var(beta1),
+    beta2_var = var(beta2)
+    ) %>%
+  knitr::kable(
+    caption= "\\label{tab:la_var} Estimated LA variance",
+    col.names = c("Variance of $\\hat{\\beta}_1^{LA}$", "Variance $\\hat{\\beta}_2^{LA}$")
+    )
+
+ls_bias %>% 
+  as_tibble() %>%
+  knitr::kable(
+    caption = "\\label{tab:ls_bias} Estimated LS bias",
+    col.names = c("Bias of $\\hat{\\beta}_1^{LS}$", "Bias $\\hat{\\beta}_2^{LS}$")
+    )
+
+bootstrapped_beta_ls %>%
+  select(beta1, beta2) %>%
+  summarize(
+    beta1_var = var(beta1),
+    beta2_var = var(beta2)
+    ) %>%
+  knitr::kable(
+    caption="\\label{tab:ls_var} Estimated LS variance",
+    col.names = c("Variance of $\\hat{\\beta}_1^{LS}$", "Variance $\\hat{\\beta}_2^{LS}$")
+    )
+```
+
+### A2
+
+In order to obtain a prediction interval for $x_{101}$ we create a prediction for each of the bootstrap samples by sampling a random centered estimated innovation from the set $\{\hat{\epsilon}_3, \ldots, \hat{\epsilon}_T\}$. 
+
+The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$. 
+
+```{r, fig.caption="\\label{fig:pred_hist_ls} Histogram of $x_{101}$ predictions using $\\vec{\\beta}_{LS}^{\\star}$"}
 sample_x <- function(beta1, beta2, pi, x) {
-  return(sample(beta2, 1) * x[99] + sample(beta1, 1) * x[100] + sample(pi, 1))
+  return(beta2 * x[99] + beta1 * x[100] + sample(pi, 1))
 }
 
 ls_sample_x <- partial(sample_x, pi=ls_pi, x = x)
@@ -129,15 +240,17 @@ x_summary_df <- x_df %>%
   )
 
 x_summary_df %>% 
-  ggplot(aes(x=index)) + 
-  geom_linerange(aes(ymin=lq, ymax=uq)) +
-  geom_line(aes(y=mean))
-
-x_summary_df %>% filter(index == 101) %>% select(lq, uq) %>% knitr::kable()
+  filter(index == 101) %>%
+  select(lq, uq) %>%
+  knitr::kable(
+    caption = "\\label{tab:conf_int_ls} Confidence interval, LS",
+    col.names = c("2.5th percentile", "97.5 percentile")
+  )
 ```
-```{r}
+
+
+```{r, fig.caption="\\label{fig:pred_hist_la} Histogram of $x_{101}$ predictions using $\\vec{\\beta}_{LA}^{\\star}$"}
 la_sample_x <- partial(sample_x, pi=la_pi, x = x)
-  
   
 x_samples <- map2_dbl(bootstrapped_beta_la$beta1, bootstrapped_beta_la$beta2, ls_sample_x)
 
@@ -162,12 +275,13 @@ x_summary_df <- x_df %>%
     uq = quantile(value, 0.975)
   )
 
-x_summary_df %>% 
-  ggplot(aes(x=index)) + 
-  geom_linerange(aes(ymin=lq, ymax=uq)) +
-  geom_line(aes(y=mean))
-
-x_summary_df %>% filter(index == 101) %>% select(lq, uq) %>% knitr::kable()
+x_summary_df %>%
+  filter(index == 101) %>%
+  select(lq, uq) %>%
+  knitr::kable(
+    caption = "\\label{tab:conf_int_la} Confidence interval, LA",
+    col.names = c("2.5th percentile", "97.5 percentile")
+  )
 ```
 
 

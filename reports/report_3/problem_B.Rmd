@@ -1,10 +1,23 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ```{r, include=FALSE}
 knitr::set_parent("base.Rmd")
-```
-```{r}
+
 library(tidyverse)
 library(broom)
 library(tibble)
+```
+
+## Problem B
+
+### B1
+
+The hypothesis is rejected at significance $\alpha = 0.95$, seeing as the p-value is less than 0.05.
+
+```{r}
 bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
   read.table(header=T) %>%
   as_tibble()
@@ -22,26 +35,33 @@ Fval <- linear_model %>%
   glance() %>%
   pull(statistic)
 ```
+
+### B2
+
 ```{r}
 permTest <- function(df){
   perm_df <- tibble(meas = df %>%
                       pull(meas) %>% 
                       sample(),
                     pers = df %>% 
-                      pull(pers) %>% 
-                      sample()
+                      pull(pers)
   )
   lm(log(meas)~pers, data=perm_df) %>% 
     glance() %>% 
     pull(statistic)
 }
 
-permTest(bilirubin)
-
-permTest_df <- tibble(run = seq(1, 999),
-                      F_stat = 999 %>%
-                        rerun(permTest(bilirubin))) %>%
+permTest_df <- tibble(
+  run = seq(1, 999),
+  F_stat = 999 %>%
+    rerun(permTest(bilirubin))
+  ) %>%
   unnest()
+```
+
+### B3
+
+```{r}
 
 perc_95 <- permTest_df %>%
   pull(F_stat) %>% 
@@ -60,5 +80,7 @@ p_value <- permTest_df %>%
 
 p_value
 ```
+
+
 
 
