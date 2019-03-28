@@ -66,7 +66,7 @@ Thus the log likelihood becomes
 \end{gather}
 
 We can now calculate the expected value of the log likelihood given $\vec{z}$, $\vec{u}$, $\lambda_0^{(t)}$, $\lambda_1^{(t)}$.
-First we calculate the conditional expectation of the first term of \eqref{eq:loglik}:
+First we calculate the conditional expectation of the first term of \eqref{eq:loglik} consisting of constants:
 
 \begin{equation}
   \label{eq:first}
@@ -76,10 +76,10 @@ First we calculate the conditional expectation of the first term of \eqref{eq:lo
     \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
   =
-  n (\ln{\lambda_0^{(t)}} + \ln{\lambda_1^{(t)}}).
+  n (\ln{\lambda_0} + \ln{\lambda_1}).
 \end{equation}
 
-For the conditional expectation of $x_i$, notice that
+For the conditional expectation of $x_i$, which is not directly observed, notice that
 
 \begin{align*}
   \text{E} \left[
@@ -196,7 +196,7 @@ We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:
     \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
   &=
-    n (\ln{\lambda_0^{(t)}} + \ln{\lambda_1^{(t)}}) \\
+    n (\ln{\lambda_0} + \ln{\lambda_1}) \\
   &-
     \lambda_0 \sum_{i = 1}^n \left[
       u_i z_i
