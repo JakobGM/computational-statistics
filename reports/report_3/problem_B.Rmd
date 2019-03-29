@@ -15,9 +15,11 @@ library(tibble)
 
 ### B1
 
-The hypothesis is rejected at significance $\alpha = 0.95$, seeing as the p-value is less than 0.05.
+The boxplot is shown in Figure $\ref{fig:boxplot}$. The plots suggest that there might be a difference between the persons, seeing as the variance is considerably lower for $p2$ and the mean is considerably higher for $p3$l. 
 
-```{r}
+The null-hypothesis, stating that $\beta_1 = \beta_2 = \beta_3$, is rejected at significance $\alpha = 0.95$, seeing as the p-value is less than 0.05.
+
+```{r, fig.cap="\\label{fig:boxplot} Boxplot for each of the different groups"}
 bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
   read.table(header=T) %>%
   as_tibble()
@@ -37,6 +39,8 @@ Fval <- linear_model %>%
 ```
 
 ### B2
+
+A function that randomly assigns the data to the three different groups, fits a linear model to the data and returns the F-statistics is implemented below.
 
 ```{r}
 permTest <- function(df){
@@ -61,7 +65,15 @@ permTest_df <- tibble(
 
 ### B3
 
-```{r}
+The null-hypothesis for the permutation test is
+
+$$
+H_0: \text{All data are from the same distribution}.
+$$
+The permutation test is performed below, and the resulting F-statistics are shown in Figure $\ref{fig:Fhist}$. The assosciated p-value is printed below, and can be seen to be below 0.05. We therefore reject the null-hypothesis at significance $\alpha = 0.95$, which agress with the result obtained from the F-test conducted earlier. 
+
+
+```{r, fig.cap="\\label{fig:Fhist} Histogram showing the F-statistic obtained from the different permutations. The red line is the 95th percentile while the blue represents the value of the F-statisic computed for the original data."}
 
 perc_95 <- permTest_df %>%
   pull(F_stat) %>% 
@@ -71,7 +83,7 @@ permTest_df %>%
   ggplot(aes(x=F_stat)) +
   geom_histogram(bins=50) +
   geom_vline(aes(xintercept=perc_95), color="red") +
-  geom_vline(aes(xintercept=Fval), color="green")
+  geom_vline(aes(xintercept=Fval), color="blue")
 
 p_value <- permTest_df %>%
   pull(F_stat) %>%
