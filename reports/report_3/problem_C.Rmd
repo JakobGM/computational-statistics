@@ -218,5 +218,35 @@ We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:
         -
         \frac{z_i}{e^{\lambda_1^{(t)} z_i} - 1}
       \right)
-    \right]
+    \right] \\
+  :&=
+    n (\ln{\lambda_0} + \ln{\lambda_1}) - \lambda_0 S_0 - \lambda_1 S_1
+\end{align*}
+
+\newcommand{\Q}[0]{\ensuremath{Q(\lambda_0, \lambda_1)}}
+
+Here we have denoted this conditional expectation of the log likelihood as $\Q$, and the first and second sum in the equation as $S_0$ and $S_1$, respectively.
+This will simplify the notation going forwards.
+
+
+## EM algorithm
+
+In order to maximize $\Q$ with respect to $\lambda_0$ and $\lambda_1$ we must solve
+
+\newcommand{\uvec}[1]{\boldsymbol{\hat{\textbf{#1}}}}
+
+\begin{gather*}
+  \nabla \cdot \Q = \vec{0}, \\
+  %
+  \nabla := \left[
+    \uvec{i} \frac{\partial}{\partial \lambda_0},~
+    \uvec{j} \frac{\partial}{\partial \lambda_1}
+  \right].
+\end{gather*}
+
+This equation can be explicitly solved for $\lambda_0$ and $\lambda_1$ as
+
+\begin{align*}
+  \frac{n}{\lambda_0} = S_0 \implies \lambda_0 &= \frac{n}{S_0}, \\
+  \frac{n}{\lambda_1} = S_1 \implies \lambda_1 &= \frac{n}{S_1}. \\
 \end{align*}
