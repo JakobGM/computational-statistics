@@ -341,10 +341,27 @@ for (bootstrap in bs_data$splits) {
 library(corrr)
 library(kableExtra)
 bs_stats <- list(
-  std = bs_results %>% map(sd),
+  std = bs_results %>% map(sd) %>% unlist(),
   cor = cor(bs_results$lambda_0, bs_results$lambda_1),
   mean = bs_results %>% colMeans()
 )
 bs_stats$bias <- bs_stats$mean - orig_result$final_lambda$value
 print(bs_stats)
 ```
+
+
+```{r, fig.fullwidth = TRUE}
+binwidth <- 0.07
+bs_results %>%
+  gather(lambda, value, c("lambda_0", "lambda_1")) %>%
+  ggplot(aes(x = value, fill = lambda)) +
+  geom_histogram(aes(y = binwidth * ..density..), binwidth = binwidth) +
+  geom_vline(xintercept = bs_stats$mean) +
+  geom_vline(xintercept = bs_stats$mean + bs_stats$std, linetype = "dashed") +
+  geom_vline(xintercept = bs_stats$mean - bs_stats$std, linetype = "dashed") +
+  geom_vline(data = orig_result$final_lambda, aes(xintercept = value, color = "Original estimates")) +
+  scale_color_manual(values = c("green")) +
+  ylab("Relative frequency") +
+  xlab("Parameter value")
+```
+
