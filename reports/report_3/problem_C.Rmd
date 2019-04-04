@@ -2,6 +2,7 @@
 
 ```{r, include = FALSE}
 # Include parent to get its headers
+library(knitr)
 set_parent("base.Rmd")
 ```
 
@@ -190,6 +191,8 @@ Using the symmetry of the problem we can find the conditional expectation of the
 We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:third} in order to get the conditional expectation of the log likelihood
 
 \begin{align*}
+  Q(\lambda_0, \lambda_1)
+  :=
   E\left[
     l(\lambda_0, \lambda_1; \vec{x}, \vec{y})
     ~\middle|~
@@ -250,3 +253,68 @@ This equation can be explicitly solved for $\lambda_0$ and $\lambda_1$ as
   \frac{n}{\lambda_0} = S_0 \implies \lambda_0 &= \frac{n}{S_0}, \\
   \frac{n}{\lambda_1} = S_1 \implies \lambda_1 &= \frac{n}{S_1}. \\
 \end{align*}
+
+
+
+```{r}
+library(tidyverse)
+u <- scan("data/u.txt", double()) %>% as.logical()
+z <- scan("data/z.txt", double())
+n <- length(z) 
+```
+
+```{r}
+expectation_maximization <- function (z, u, lambda, tol) {
+  lambdas <- lambda
+  n <- length(u)
+
+  delta <- Inf
+  while (delta > tol) {
+    sum_0 <- sum(z[u]) + sum(1 / lambda[1] - z[!u] / expm1(lambda[1] * z[!u]))
+    sum_1 <- sum(z[!u]) + sum(1 / lambda[2] - z[u] / expm1(lambda[2] * z[u]))
+    new_lambda <- c(n / sum_0, n / sum_1)
+
+    delta <- max(abs(lambda - new_lambda))
+    lambda <- new_lambda
+
+    lambdas <- c(lambdas, lambda)
+  }
+
+  lambdas <- tibble(
+    iteration = 1:(length(lambdas) / 2),
+    lambda_0 = lambdas[c(TRUE, FALSE)],
+    lambda_1 = lambdas[c(FALSE, TRUE)]
+  )
+
+  final_lambda <- tibble(
+    parameter = c("lambda_0", "lambda_1"),
+    value = lambda
+  )
+  return(list(lambdas = lambdas, final_lambda = final_lambda))
+}
+```
+
+
+```{r}
+expectation <- expectation_maximization(z, u, lambda = c(1, 1), tol = 0.001)
+final_lambda <- expectation$final_lambda
+lambdas <- expectation$lambdas
+print(final_lambda)
+```
+
+```{r}
+library(scales)
+lambdas %>%
+  gather(lambda, value, c("lambda_0", "lambda_1")) %>%
+  ggplot(aes(x = iteration)) +
+  geom_line(aes(y = value, col = lambda)) +
+  geom_hline(
+    data = final_lambda,
+    aes(yintercept = value, col = parameter),
+    alpha = 0.5,
+    linetype = "dashed"
+  ) +
+  scale_x_continuous(breaks=1:dim(lambdas)[1]) +
+  ylim(0, NA)
+```
+
