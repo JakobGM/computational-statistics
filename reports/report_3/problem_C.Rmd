@@ -258,14 +258,18 @@ This equation can be explicitly solved for $\lambda_0$ and $\lambda_1$ as
 
 ```{r}
 library(tidyverse)
-u <- scan("data/u.txt", double()) %>% as.logical()
-z <- scan("data/z.txt", double())
-n <- length(z) 
+data <- tibble(
+  u = scan("data/u.txt", double()) %>% as.logical(),
+  z = scan("data/z.txt", double())
+)
+n <- length(data$z) 
 ```
 
 ```{r}
-expectation_maximization <- function (z, u, lambda, tol) {
+expectation_maximization <- function (data, lambda = c(1, 1), tol = 1e-4) {
   lambdas <- lambda
+  z <- data$z
+  u <- data$u
   n <- length(u)
 
   delta <- Inf
@@ -296,25 +300,51 @@ expectation_maximization <- function (z, u, lambda, tol) {
 
 
 ```{r}
-expectation <- expectation_maximization(z, u, lambda = c(1, 1), tol = 0.001)
-final_lambda <- expectation$final_lambda
-lambdas <- expectation$lambdas
-print(final_lambda)
+orig_result <- expectation_maximization(data = data)
+final_lambda <- orig_result$final_lambda
+print(orig_result$final_lambda)
 ```
 
 ```{r}
 library(scales)
-lambdas %>%
+orig_result$lambdas %>%
   gather(lambda, value, c("lambda_0", "lambda_1")) %>%
   ggplot(aes(x = iteration)) +
   geom_line(aes(y = value, col = lambda)) +
   geom_hline(
-    data = final_lambda,
+    data = orig_result$final_lambda,
     aes(yintercept = value, col = parameter),
     alpha = 0.5,
     linetype = "dashed"
   ) +
-  scale_x_continuous(breaks=1:dim(lambdas)[1]) +
+  scale_x_continuous(breaks=1:dim(orig_result$lambdas)[1]) +
   ylim(0, NA)
 ```
 
+
+```{r}
+library(rsample)  # For bootstraps() function
+library(magrittr)  # For assignment pipe
+set.seed(0)
+B <- 2000
+bs_data <- bootstraps(data, times = B)
+bs_results <- tibble(lambda_0 = double(), lambda_1 = double())
+
+for (bootstrap in bs_data$splits) {
+  expectation <- expectation_maximization(data = analysis(bootstrap))
+  lambda <- expectation$final_lambda$value
+  bs_results %<>% add_row(lambda_0 = lambda[1], lambda_1 = lambda[2])
+}
+```
+
+```{r}
+library(corrr)
+library(kableExtra)
+bs_stats <- list(
+  std = bs_results %>% map(sd),
+  cor = cor(bs_results$lambda_0, bs_results$lambda_1),
+  mean = bs_results %>% colMeans()
+)
+bs_stats$bias <- bs_stats$mean - orig_result$final_lambda$value
+print(bs_stats)
+```
