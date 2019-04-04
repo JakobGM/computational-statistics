@@ -5,19 +5,18 @@ author:
 - "Jakob Gerhard Martinussen"
 date: "Spring 2019"
 output:
-  html_document:
-    fig_caption: yes
   pdf_document:
     latex_engine: xelatex
     fig_caption: yes
     keep_tex: true
+  html_document:
+    fig_caption: yes
 header-includes:
   - \usepackage{fontspec}
   - \setmonofont{DejaVu Sans Code}
   - \makeatletter
   - \def\verbatim@nolig@list{}
   - \makeatother
-
   - \newcommand{\mat}[1]{\boldsymbol{#1}}
   - \usepackage{bm}
   - \usepackage[a]{esvect}

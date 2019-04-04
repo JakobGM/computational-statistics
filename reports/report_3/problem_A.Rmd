@@ -15,9 +15,6 @@ library(purrr)
 ```
 ## Problem A
 
-### A1
-
-
 We start off by using the supplied function to estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$.
 
 The innovations $\hat{e}_t$ can be estimated by 
@@ -32,16 +29,16 @@ The estimated innovations $\hat{\epsilon}_t$ are then centered by calculating
 $$
 \hat{\epsilon}_t = \hat{e}_t - \bar{e}
 $$
-We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\vec{\beta}_{LS}$ and $\vec{\beta}_{LS}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
+We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
 
 $$
 x_t = \hat{\beta}_1x_{t-1} + \hat{\beta}_2x_{t-2} + \hat{\epsilon},
 $$
-where $\epsilon$ is chosen randomly from either the set $\{\hat{\epsilon}_3^{LS}, \ldots, \hat{\epsilon}_T^{LS}\}$ or $\{\hat{\epsilon}^{LA}_3, \ldots, \hat{\epsilon}_T^{LA}\}$. 
+where $\epsilon$ is chosen randomly from either the set $\{\hat{\epsilon}_3^{LS}, \ldots, \hat{\epsilon}_T^{LS}\}$ or $\{\hat{\epsilon}^{LA}_3, \ldots, \hat{\epsilon}_T^{LA}\}$, depending on which situation we're interested in. 
 
-For each of the $B$ resampled data sequences we estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. A histogram showing the obtained values is shown in Figure $\ref{fig:1}$ and $\ref{fig:2}$.
+For each of the B resampled data sequences we estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. A histogram showing the obtained values is shown in Figure $\ref{fig:hist_ls}$ and $\ref{fig:hist_la}$.
 
-```{r, fig.cap=c("\\label{fig:1} Histogram of $\\vec{\\beta}_{LS}$ estimated from each of the $B$ bootstrap samples", "\\label{fig:2} Histogram of $\\vec{\\beta}_{LA}$ estimated from each of the $B$ bootstrap samples")}
+```{r, fig.cap="\\label{fig:hist_ls} Histogram of $\\hat{\\beta}_{LS}$ obtained from bootstrap samples of the data sequence."}
 
 x <- data3A$x
 
@@ -112,7 +109,9 @@ bootstrapped_beta_ls %>%
   ggplot(aes(x = value)) +
   geom_histogram(bins = 100) +
   facet_wrap(~key, scales = "free_x")
+```
 
+```{r, fig.cap = fig.cap="\\label{fig:hist_la} Histogram of $\\hat{\\beta}_{LA}$ obtained from bootstrap samples of the data sequence."}
 bootstrapped_beta_la <- resampled_xs_la %>%
   map(calculate_beta_la) %>%
   map(purrr::set_names, nm = c("beta1", "beta2")) %>%
@@ -208,8 +207,8 @@ In order to obtain a prediction interval for $x_{101}$ we create a prediction fo
 
 The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$. 
 
-```{r, fig.caption="\\label{fig:pred_hist_ls} Histogram of $x_{101}$ predictions using $\\vec{\\beta}_{LS}^{\\star}$"}
-sample_x <- function(beta1, beta2, pi, x) {
+```{r, fig.cap="\\label{fig:pred_hist_ls} Predicted values of $x_{101}$ using $\\hat{\\vec{beta}}_{LS}$"}
+sample_x <- function(beta1, beta2, pi, x) { 
   return(beta2 * x[99] + beta1 * x[100] + sample(pi, 1))
 }
 
@@ -249,7 +248,7 @@ x_summary_df %>%
 ```
 
 
-```{r, fig.caption="\\label{fig:pred_hist_la} Histogram of $x_{101}$ predictions using $\\vec{\\beta}_{LA}^{\\star}$"}
+```{r, fig.cap="\\label{fig:pred_hist_la} Predicted values of $x_{101}$ using $\\hat{\\vec{beta}}_{LA}$"}
 la_sample_x <- partial(sample_x, pi=la_pi, x = x)
   
 x_samples <- map2_dbl(bootstrapped_beta_la$beta1, bootstrapped_beta_la$beta2, ls_sample_x)
