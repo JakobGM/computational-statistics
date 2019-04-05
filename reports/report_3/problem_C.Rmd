@@ -366,3 +366,90 @@ bs_results %>%
   theme(legend.position = "bottom")
 ```
 
+\newcommand{\od}[1]{\,\text{d}#1}
+
+We now want to find an analytical expression for $f_{Z_i, U_i}(z_i, u_i ~|~ \lambda_0, \lambda_1)$.
+Start by finding $F_{Z}(z_i ~|~ u_i = 1)$:
+\begin{gather*}
+  F_Z(z_i ~|~ u_i = 1)
+  =
+  P(Z_i \leq z_i ~|~ Y_i \leq X_i)
+  =
+  P(X_i \leq z_i, Y_i \leq z_i, Y_i \leq X_i)
+  =
+  P(X_i \leq z_i, Y_i \leq X_i) \\
+  =
+  \int \limits_{0}^{z_i} \int \limits_{0}^{x} f_{X}(x ~|~ \lambda_0) f_{Y}(y ~|~ \lambda_1) \od{y} \od{x} \\
+  =
+  \int \limits_{0}^{z_i} \lambda_0 e^{-\lambda_0 x} \int \limits_{0}^{x} \lambda_1 e^{-\lambda_1 y} \od{y} \od{x} \\
+  =
+  \int \limits_{0}^{z_i} \lambda_0 e^{-\lambda_0 x} \left( 1 - e^{-\lambda_1 x} \right) \od{x} \\
+  =
+  \frac{\lambda_0}{\lambda_0 + \lambda_1} \left( e^{-(\lambda_0 + \lambda_1) z_i} - 1 \right) - e^{-\lambda_0 z_i} + 1
+\end{gather*}
+
+We can now find $f_{Z}(z_i ~|~ u_i = 1)$ by deriving:
+\begin{gather*}
+  f_{Z}(z_i ~|~ u_i = 1) \\
+  =
+  \frac{\od{F_Z}(z_i ~|~ u_i = 1)}{\od{z_i}} \\
+  =
+  -\lambda_0 e^{-(\lambda_0 + \lambda_1) z_i} + \lambda_0 e^{-\lambda_0 z_i} \\
+  =
+  \lambda_0 e^{-\lambda_0 z_i} \left( 1 - e^{-\lambda_1 z_i} \right)
+\end{gather*}
+
+Again, by the symmetry of the problem, we can find $f_{Z}(z_i ~|~ u_i = 0)$:
+\begin{equation*}
+  f_{Z}(z_i ~|~ u_i = 1)
+  =
+  \lambda_1 e^{-\lambda_1 z_i} \left( 1 - e^{-\lambda_0 z_i} \right)
+\end{equation*}
+
+The joint distribution for $\vec{z}$ and $\vec{u}$ and inversely the likelihood of $\lambda_0$ and $\lambda_1$, depending on what you consider to be the variables, can now be found:
+
+\begin{align*}
+  f_{Z, U}(\vec{z}, \vec{u} ~|~ \lambda_0, \lambda_1)
+  &=
+  \prod \limits_{i:u_i = 0} f_{Z}(z_i ~|~ u_i = 0)
+  \prod \limits_{i:u_i = 1} f_{Z}(z_i ~|~ u_i = 1) \\
+  &=
+  \prod \limits_{i = 1}^{n} \left(
+    u_i \lambda_0 e^{-\lambda_0 z_i} \left( 1 - e^{-\lambda_1 z_i} \right)
+    +
+    (u_i - 1) \lambda_1 e^{-\lambda_1 z_i} \left( 1 - e^{-\lambda_0 z_i} \right)
+  \right) \\
+  &=
+  \mathcal{L}(\lambda_0, \lambda_1; \vec{z}, \vec{u})
+\end{align*}
+
+We can now find the log likelihood:
+\begin{align*}
+  \ell(\lambda_0, \lambda_1; \vec{z}, \vec{u})
+  &:=
+  \ln{\mathcal{L}(\lambda_0, \lambda_1; \vec{z}, \vec{u})} \\
+  &=
+    \sum \limits_{i: u_i = 0} \left(
+      \ln{(\lambda_1)} - \lambda_1 z_i + \ln{(1 - e^{- \lambda_0 z_i})}
+    \right)
+  +
+    \sum \limits_{i: u_i = 1} \left(
+      \ln{(\lambda_0)} - \lambda_0 z_i + \ln{(1 - e^{- \lambda_1 z_i})}
+    \right) \\
+  &=
+    n_1 \ln{(\lambda_0)}
+    +
+    n_0 \ln{(\lambda_1)}
+    +
+    \sum \limits_{i: u_i = 0} \left(\ln{(1 - e^{-\lambda_0 z_i})} - \lambda_1 z_i \right)
+    +
+    \sum \limits_{i: u_i = 1} \left(\ln{(1 - e^{-\lambda_1 z_i})} - \lambda_0 z_i \right)
+\end{align*}
+
+Where we have defined:
+\begin{align*}
+  n_0 := \sum \limits_{i = 1}^{n} (1 - u_i), 
+  ~~~~~~
+  n_1 := \sum \limits_{i = 1}^{n} u_i
+\end{align*}
+
