@@ -362,6 +362,7 @@ bs_results %>%
   geom_vline(data = orig_result$final_lambda, aes(xintercept = value, color = "Original estimates")) +
   scale_color_manual(values = c("green")) +
   ylab("Relative frequency") +
-  xlab("Parameter value")
+  xlab("Parameter value") +
+  theme(legend.position = "bottom")
 ```
 
