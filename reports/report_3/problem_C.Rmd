@@ -504,4 +504,18 @@ The Hessian of $\ell(\lambda_0, \lambda_1; \vec{z}, \vec{u})$ is therefore diago
 
 The Hessian is therefore negative definite.
 In conclusion, there is only one maxima, which is the global maxima.
-We can therefore be sure that if we solve the optimization problem, we have in fact found the global maximum.
+We can therefore be sure that if we solve the optimization problem, we have in fact found maximum likelihood estimators $\hat{\lambda_0}$ and $\hat{\lambda_1}$.
+
+```{r}
+score <- function (lambda, data, indeces) {
+  sum(indeces) / lambda + sum(data$z[!indeces] / expm1(lambda * data$z[!indeces])) - sum(data$z[indeces])
+}
+```
+
+```{r}
+lambda_mle <- list(
+  lambda_0 = uniroot(f = score, interval = c(1e-3, 100), data = data, indeces = data$u)$root,
+  lambda_1 = uniroot(f = score, interval = c(1e-3, 100), data = data, indeces = !data$u)$root
+)
+print(lambda_mle)
+```
