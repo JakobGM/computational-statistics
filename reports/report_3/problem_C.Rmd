@@ -519,3 +519,11 @@ lambda_mle <- list(
 )
 print(lambda_mle)
 ```
+
+Some of the advantages of optimizing the likelihood directly compared to the EM algorithm are:
+
+\begin{itemize}
+  \item Only one optimization is necessary, compared to the EM algorithm where you might have to optimize differently parametrized functions iteratively.
+  \item The Fisher information matrix can be calculated in order to infer the degree of information encoded in the maximum likelihood.
+  \item You optimize the function of interest directly, instead of only approximating it.
+\end{itemize}
