@@ -453,3 +453,55 @@ Where we have defined:
   n_1 := \sum \limits_{i = 1}^{n} u_i
 \end{align*}
 
+In order to find the maximum likelihood estimators $\hat{\lambda_0}$ and $\hat{\lambda_1}$, we derive the *score vector*:
+
+\begin{align*}
+  \vec{s}(\lambda_0, \lambda_1; \vec{z}, \vec{u})
+  :&=
+  \begin{bmatrix}
+    \frac{\partial \ell(\lambda_0, \lambda_1; \vec{z}, \vec{u})}{\partial \lambda_0} \\
+    \frac{\partial \ell(\lambda_0, \lambda_1; \vec{z}, \vec{u})}{\partial \lambda_1}
+  \end{bmatrix} \\
+  &=
+  \begin{bmatrix}
+    \frac{n_1}{\lambda_0} + \sum \limits_{i: u_i = 0} \frac{z_i}{e^{\lambda_0 z_i} - 1} - \sum \limits_{i: u_i = 1} z_i\\
+    \frac{n_0}{\lambda_1} + \sum \limits_{i: u_i = 1} \frac{z_i}{e^{\lambda_1 z_i} - 1} - \sum \limits_{i: u_i = 0} z_i
+  \end{bmatrix}
+\end{align*}
+
+We can now solve the optimization problem
+
+\begin{equation*}
+  \hat{\lambda_0}, \hat{\lambda_1}
+  =
+  \underset{\lambda_0, \lambda_1}{\text{argmax}}~\mathcal{L}(\lambda_0, \lambda_1; \vec{z}, \vec{u}),
+\end{equation*}
+
+by solving the dual problem of
+
+\begin{equation*}
+  \vec{s}(\lambda_0, \lambda_1; \vec{z}, \vec{u}) = \vec{0},
+\end{equation*}
+
+with respect to $\lambda_0$ and $\lambda_1$.
+
+Now, notice that $s_1 = \frac{\od{\ell}}{\od{\lambda_0}}$ is a function of only $\lambda_0$, not $\lambda_1$, and vice versa for $s_2$.
+The Hessian of $\ell(\lambda_0, \lambda_1; \vec{z}, \vec{u})$ is therefore diagonal with the following diagonal elements:
+
+\begin{align*}
+  \frac{\partial^2 \ell}{{\partial \lambda_0}^2}
+  =
+    - \frac{n_1}{{\lambda_0}^2}
+    - \sum \limits_{i: u_i = 0} \frac{{z_i}^2 e^{\lambda_0 z_i}}{(e^{\lambda_0 z_i} - 1)^2} 
+  < 0
+  \\
+  \frac{\partial^2 \ell}{{\partial \lambda_1}^2}
+  =
+    - \frac{n_0}{{\lambda_1}^2}
+    - \sum \limits_{i: u_i = 1} \frac{{z_i}^2 e^{\lambda_1 z_i}}{(e^{\lambda_1 z_i} - 1)^2} 
+  < 0
+\end{align*}
+
+The Hessian is therefore negative definite.
+In conclusion, there is only one maxima, which is the global maxima.
+We can therefore be sure that if we solve the optimization problem, we have in fact found the global maximum.
