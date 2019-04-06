@@ -343,6 +343,23 @@ orig_result$lambdas %>%
 As we can see in figure \ref{fig:em_convergence} the EM-algorithm converges quite rapidly.
 
 
+## Bootstrapping
+
+We now want to apply bootstrapping in order to find estimates for the standard deviation, bias, and correlation of $\vec{\hat{\lambda_0}}$ and $\vec{\hat{\lambda_1}}$.
+The following pseudocode describes the actual implementation:
+
+\begin{itemize}
+  \item Assume that we have an initial data set $\vec{z}$ and $\vec{u}$, defined as before.
+  \item Construct the pairwise observation set $\Omega = \{ \omega_1, \omega_2, ..., \omega_n \} := \{ (z_1, u_1), (z_2, u_2), ..., (z_n, u_n) \}$. These observation pairs are now independet and identically distributed.
+  \item Construct the empirical distribution $\hat{F}$ which assigns mass $\frac{1}{n}$ to each observation pair in $\Omega$.
+  \item Draw $B$ \textit{bootstrap replicates} from $\hat{F}$. Each bootstrap replicate is of sample size $n$, and is denoted $\Omega^{(b)} = \{ \omega_1^{(b)}, ..., \omega_n^{(b)} \} = \{ (z_1^{(b)}, u_1^{(b)}), ..., (z_n^{(b)}, u_n^{(b)}) \}$ for $b = 1, ..., B$. In practice, this means sampling $n$ elements from $\Omega$ \textit{with} replacement.
+  \item For $b = 1, 2, ..., B$:
+  \begin{itemize}
+    \item Estimate $\lambda_0^{(b)}$ and $\lambda_1^{(b)}$ using the EM-algorithm as derived above. But this time use the bootstrap replicate $\Omega^{(b)}$ instead of the original data set $\Omega$.
+  \end{itemize}
+\end{itemize}
+
+The important part here is that we draw observation *pairs*, as $z_i$ and $u_j$ are dependent for $i = j$ and independent for $i \neq j$.
 
 ```{r}
 library(rsample)  # For bootstraps() function
