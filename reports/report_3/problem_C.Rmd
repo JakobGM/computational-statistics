@@ -411,8 +411,9 @@ print(bs_stats$cor)
 We have $\hat{\text{Corr}}(\hat{\lambda_0}, \hat{\lambda_1}) \approx 0.0015$ which can be considered very close to $0$.
 This makes sense, as they should be independent.
 
+These results can be visualized in a histogram:
 
-```{r, fig.fullwidth = TRUE}
+```{r, fig.fullwidth = TRUE, fig.pos = "!h", fig.cap = "\\label{fig:em_histogram}Histogram of the bootstrap replicates of $\\hat{\\lambda_0}$ (red) and $\\hat{\\lambda_1}$ (blue). The mean of the bootstrap replicates are show as solid, black, vertical lines. Mean $\\pm$ Std of the bootstrap replicates are shown in dashed, black, vertical lines. Finally, the original EM-estimators are shown as green vertical lines."}
 binwidth <- 0.07
 bs_results %>%
   gather(lambda, value, c("lambda_0", "lambda_1")) %>%
@@ -421,12 +422,37 @@ bs_results %>%
   geom_vline(xintercept = bs_stats$mean) +
   geom_vline(xintercept = bs_stats$mean + bs_stats$std, linetype = "dashed") +
   geom_vline(xintercept = bs_stats$mean - bs_stats$std, linetype = "dashed") +
-  geom_vline(data = orig_result$final_lambda, aes(xintercept = value, color = "Original estimates")) +
+  geom_vline(
+    data = orig_result$final_lambda,
+    aes(xintercept = value, color = "Original estimates")
+  ) +
   scale_color_manual(values = c("green")) +
   ylab("Relative frequency") +
   xlab("Parameter value") +
   theme(legend.position = "bottom")
 ```
+
+Figure \ref{fig:em_histogram} shows the greater estimated variance and bias in $\hat{\lambda_1}$ compared to $\hat{\lambda_0}$.
+It is possible to construct a \textit{bias corrected} estimate, $\hat{\lambda_1}_c$, for $\lambda_1$ on the form
+
+\begin{equation*}
+  \hat{\lambda_1}_c := \hat{\lambda_1} - \widehat{\text{Bias}}(\hat{\lambda}),
+\end{equation*}
+
+and likewise for $\lambda_0$.
+This may indeed decrease the bias of our estimators, but will not necessarily yield an overall better estimator as
+
+\begin{equation*}
+  \text{Var}(\hat{\lambda_i}_c) \geq \text{Var}(\hat{\lambda_i}), ~~~ i = 1, 2
+\end{equation*}
+
+due to the estimator consisting of additional terms.
+It is therefore preferable to \textit{not} apply bias correction if the bias is small.
+As we consider our bias to be within acceptable bounds, we will not opt for bias correction.
+
+
+
+## Analytical formula for $f_{Z_i, U_i}(z_i, u_i ~|~ \lambda_0, \lambda_1)$
 
 \newcommand{\od}[1]{\,\text{d}#1}
 
