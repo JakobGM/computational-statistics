@@ -229,7 +229,7 @@ In order to maximize $\Q$ with respect to $\lambda_0$ and $\lambda_1$ we must so
 \newcommand{\uvec}[1]{\boldsymbol{\hat{\textbf{#1}}}}
 
 \begin{gather*}
-  \nabla \cdot \Q = \vec{0}, \\
+  \nabla \Q = [0, 0], \\
   %
   \nabla := \left[
     \uvec{i} \frac{\partial}{\partial \lambda_0},~
