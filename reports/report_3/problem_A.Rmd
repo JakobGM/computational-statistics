@@ -207,7 +207,7 @@ In order to obtain a prediction interval for $x_{101}$ we create a prediction fo
 
 The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$. 
 
-```{r, fig.cap="\\label{fig:pred_hist_ls} Predicted values of $x_{101}$ using $\\hat{\\vec{beta}}_{LS}$"}
+```{r, fig.cap="\\label{fig:pred_hist_ls} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LS}$"}
 sample_x <- function(beta1, beta2, pi, x) { 
   return(beta2 * x[99] + beta1 * x[100] + sample(pi, 1))
 }
@@ -248,7 +248,7 @@ x_summary_df %>%
 ```
 
 
-```{r, fig.cap="\\label{fig:pred_hist_la} Predicted values of $x_{101}$ using $\\hat{\\vec{beta}}_{LA}$"}
+```{r, fig.cap="\\label{fig:pred_hist_la} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LA}$"}
 la_sample_x <- partial(sample_x, pi=la_pi, x = x)
   
 x_samples <- map2_dbl(bootstrapped_beta_la$beta1, bootstrapped_beta_la$beta2, ls_sample_x)
