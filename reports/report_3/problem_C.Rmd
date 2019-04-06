@@ -350,16 +350,17 @@ The following pseudocode describes the actual implementation:
 
 \begin{itemize}
   \item Assume that we have an initial data set $\vec{z}$ and $\vec{u}$, defined as before.
-  \item Construct the pairwise observation set $\Omega = \{ \omega_1, \omega_2, ..., \omega_n \} := \{ (z_1, u_1), (z_2, u_2), ..., (z_n, u_n) \}$. These observation pairs are now independet and identically distributed.
-  \item Construct the empirical distribution $\hat{F}$ which assigns mass $\frac{1}{n}$ to each observation pair in $\Omega$.
-  \item Draw $B$ \textit{bootstrap replicates} from $\hat{F}$. Each bootstrap replicate is of sample size $n$, and is denoted $\Omega^{(b)} = \{ \omega_1^{(b)}, ..., \omega_n^{(b)} \} = \{ (z_1^{(b)}, u_1^{(b)}), ..., (z_n^{(b)}, u_n^{(b)}) \}$ for $b = 1, ..., B$. In practice, this means sampling $n$ elements from $\Omega$ \textit{with} replacement.
+  \item Construct the pairwise observation set $\Omega = \{ \omega_1, \omega_2, ..., \omega_n \} := \{ (z_1, u_1), (z_2, u_2), ..., (z_n, u_n) \}$. These observation pairs are now independet and identically distributed. Denote this distribution as $F$.
+  \item Construct the empirical distribution $\hat{F}$ which assigns mass $\frac{1}{n}$ to each observation pair in $\Omega$. This distribution is supposed to approximate $F$.
+  \item Draw $B$ \textit{bootstrap samples} from $\hat{F}$. Each bootstrap sample is of size $n$, and is denoted $\Omega^{(b)} = \{ \omega_1^{(b)}, ..., \omega_n^{(b)} \} = \{ (z_1^{(b)}, u_1^{(b)}), ..., (z_n^{(b)}, u_n^{(b)}) \}$ for $b = 1, ..., B$. In practice, this means sampling $n$ elements from $\Omega$ \textit{with} replacement.
   \item For $b = 1, 2, ..., B$:
   \begin{itemize}
-    \item Estimate $\lambda_0^{(b)}$ and $\lambda_1^{(b)}$ using the EM-algorithm as derived above. But this time use the bootstrap replicate $\Omega^{(b)}$ instead of the original data set $\Omega$.
+    \item Estimate $\lambda_0^{(b)}$ and $\lambda_1^{(b)}$ using the EM-algorithm as derived above, but this time use the bootstrap replicate $\Omega^{(b)}$ instead of the original data set $\Omega$. These are called bootstrap replicates of $\lambda_0$ and $\lambda_1$, respectively.
   \end{itemize}
 \end{itemize}
 
 The important part here is that we draw observation *pairs*, as $z_i$ and $u_j$ are dependent for $i = j$ and independent for $i \neq j$.
+It is this algorithm we now implement, using $B = 2000$:
 
 ```{r}
 library(rsample)  # For bootstraps() function
@@ -376,17 +377,39 @@ for (bootstrap in bs_data$splits) {
 }
 ```
 
-```{r}
+The idea is now that the bootstrap replicates $[(\hat{\lambda_0}^{(1)}, \hat{\lambda_1}^{(1)}), ..., (\hat{\lambda_0}^{(B)}, \hat{\lambda_1}^{(B)})]$ can be considered to be approximate samples of the distribution of $\vec{\lambda}_{\text{EM}}$.
+We can therefore estimate the standard deviation, bias, and correlation of $\vec{\lambda}_{\text{EM}}$ in order to make inferences from the original EM-result.
+
+```{r, fig.pos = "!h"}
 library(corrr)
 library(kableExtra)
 bs_stats <- list(
-  std = bs_results %>% map(sd) %>% unlist(),
   cor = cor(bs_results$lambda_0, bs_results$lambda_1),
+  std = bs_results %>% map(sd) %>% unlist(),
   mean = bs_results %>% colMeans()
 )
 bs_stats$bias <- bs_stats$mean - orig_result$final_lambda$value
-print(bs_stats)
+bs_stats[-1] %>%
+  as_tibble() %>%
+  t() %>%
+  kable(
+    escape = FALSE,
+    col.names = c("$\\hat{\\lambda_0}$", "$\\hat{\\lambda_1}$"),
+    caption = "\\label{tab:em_results}Estimated EM-estimator statistics from bootstrap results.",
+    format = "pandoc"
+  )
 ```
+
+We can see from table \ref{tab:em_results} that the bias is relatively small.
+We also have $\hat{\text{SD}}(\hat{\lambda_0}) < \hat{\text{SD}}(\hat{\lambda_1})$, which may be explained by the fact that $\hat{\lambda_0} < \hat{\lambda_1}$ in combination with the fact that the variance and rate of an exponential distribution are equal.
+Additionally:
+
+```{r}
+print(bs_stats$cor)
+```
+
+We have $\hat{\text{Corr}}(\hat{\lambda_0}, \hat{\lambda_1}) \approx 0.0015$ which can be considered very close to $0$.
+This makes sense, as they should be independent.
 
 
 ```{r, fig.fullwidth = TRUE}
