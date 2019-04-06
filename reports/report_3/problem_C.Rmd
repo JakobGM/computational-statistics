@@ -9,7 +9,6 @@ set_parent("base.Rmd")
 ## Description
 
 Let $\vec{x} := [x_1, ..., x_n]$ and $\vec{y} := [y_1, ..., y_n]$ be two collections of independent random variables from two independent exponential distributions
-
 \begin{align*}
   x_1, ..., x_n &\sim \text{exp}(\lambda_0) \\
   y_1, ..., y_n &\sim \text{exp}(\lambda_1).
@@ -17,7 +16,6 @@ Let $\vec{x} := [x_1, ..., x_n]$ and $\vec{y} := [y_1, ..., y_n]$ be two collect
 
 Denote the probability density functions of these distributions as $f_x(x | \lambda_0)$ and $f_y(y | \lambda_1)$ respectively.
 Now assume that we do not observe $\vec{x}$ and $\vec{y}$ directly, but rather $\vec{z} := [z_1, ..., z_n]$ and $\vec{u} := [u_1, ..., u_n]$, which are constructed as
-
 \begin{align*}
   z_i &= \text{max}(x_i, y_i) \\
   u_i &= I(x_i \leq y_i) \\
@@ -28,7 +26,6 @@ for $i = 1, ..., n$ and where $I$ is the indicator function.
 ## Complete data log likelihood function
 
 The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
-
 \begin{gather*}
   L(\lambda_0, \lambda_0; \vec{x}, \vec{y}) \\
   =
@@ -54,21 +51,19 @@ The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
 \end{gather*}
 
 Thus the log likelihood becomes
-
-\begin{gather}
-  l(\lambda_0, \lambda_1; \vec{x}, \vec{y})
-  :=
-  \ln{L(\lambda_0, \lambda_1; \vec{x}, \vec{y})} \nonumber \\
-  =
+\begin{align}
+  \ell(\lambda_0, \lambda_1; \vec{x}, \vec{y})
+  &:=
+  \ln{\mathcal{L}(\lambda_0, \lambda_1; \vec{x}, \vec{y})} \nonumber \\
+  &=
   n (\ln{\lambda_0} + \ln{\lambda_1})
   - \lambda_0 \sum_{i = 1}^n x_i
   - \lambda_1 \sum_{j = 1}^n y_j.
   \label{eq:loglik}
-\end{gather}
+\end{align}
 
 We can now calculate the expected value of the log likelihood given $\vec{z}$, $\vec{u}$, $\lambda_0^{(t)}$, $\lambda_1^{(t)}$.
 First we calculate the conditional expectation of the first term of \eqref{eq:loglik} consisting of constants:
-
 \begin{equation}
   \label{eq:first}
   \text{E} \left[
@@ -81,7 +76,6 @@ First we calculate the conditional expectation of the first term of \eqref{eq:lo
 \end{equation}
 
 For the conditional expectation of $x_i$, which is not directly observed, notice that
-
 \begin{align*}
   \text{E} \left[
     x_i
@@ -109,7 +103,6 @@ For the conditional expectation of $x_i$, which is not directly observed, notice
 
 Here we have rewritten the cases by using $u_i$.
 For the $u_i = 0$ case we can calculate the expected value by integration:
-
 \begin{gather*}
   \text{E}\left[
     x_i
@@ -145,7 +138,6 @@ For the $u_i = 0$ case we can calculate the expected value by integration:
 \end{gather*}
 
 Using $u_i$ we can now write the conditional expectation of the second term in \eqref{eq:loglik} as
-
 \begin{equation}
   \label{eq:second}
   E\left[
@@ -167,7 +159,6 @@ Using $u_i$ we can now write the conditional expectation of the second term in \
 \end{equation}
 
 Using the symmetry of the problem we can find the conditional expectation of the third term in \eqref{eq:loglik} as well
-
 \begin{equation}
   \label{eq:third}
   E\left[
@@ -189,12 +180,11 @@ Using the symmetry of the problem we can find the conditional expectation of the
 \end{equation}
 
 We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:third} in order to get the conditional expectation of the log likelihood
-
 \begin{align*}
   Q(\lambda_0, \lambda_1)
   :=
   E\left[
-    l(\lambda_0, \lambda_1; \vec{x}, \vec{y})
+    \ell(\lambda_0, \lambda_1; \vec{x}, \vec{y})
     ~\middle|~
     \vec{z}, \vec{u}, \lambda_0^{(t)}, \lambda_1^{(t)}
   \right]
@@ -248,7 +238,6 @@ In order to maximize $\Q$ with respect to $\lambda_0$ and $\lambda_1$ we must so
 \end{gather*}
 
 This equation can be explicitly solved for $\vec{\lambda} := [\lambda_0, \lambda_1]$ as
-
 \begin{align}
   \label{eq:em_lambda}
   \frac{n}{\lambda_0} = S_0 \implies \lambda_0 &= \frac{n}{S_0}, \nonumber \\
@@ -434,14 +423,12 @@ bs_results %>%
 
 Figure \ref{fig:em_histogram} shows the greater estimated variance and bias in $\hat{\lambda_1}$ compared to $\hat{\lambda_0}$.
 It is possible to construct a \textit{bias corrected} estimate, $\hat{\lambda_1}_c$, for $\lambda_1$ on the form
-
 \begin{equation*}
   \hat{\lambda_1}_c := \hat{\lambda_1} - \widehat{\text{Bias}}(\hat{\lambda}),
 \end{equation*}
 
 and likewise for $\lambda_0$.
 This may indeed decrease the bias of our estimators, but will not necessarily yield an overall better estimator as
-
 \begin{equation*}
   \text{Var}(\hat{\lambda_i}_c) \geq \text{Var}(\hat{\lambda_i}), ~~~ i = 1, 2
 \end{equation*}
@@ -458,34 +445,30 @@ As we consider our bias to be within acceptable bounds, we will not opt for bias
 
 We now want to find an analytical expression for $f_{Z_i, U_i}(z_i, u_i ~|~ \lambda_0, \lambda_1)$.
 Start by finding $F_{Z}(z_i ~|~ u_i = 1)$:
-\begin{gather*}
+\begin{align*}
   F_Z(z_i ~|~ u_i = 1)
-  =
-  P(Z_i \leq z_i ~|~ Y_i \leq X_i)
-  =
-  P(X_i \leq z_i, Y_i \leq z_i, Y_i \leq X_i)
-  =
+  &=
   P(X_i \leq z_i, Y_i \leq X_i) \\
-  =
+  &=
   \int \limits_{0}^{z_i} \int \limits_{0}^{x} f_{X}(x ~|~ \lambda_0) f_{Y}(y ~|~ \lambda_1) \od{y} \od{x} \\
-  =
+  &=
   \int \limits_{0}^{z_i} \lambda_0 e^{-\lambda_0 x} \int \limits_{0}^{x} \lambda_1 e^{-\lambda_1 y} \od{y} \od{x} \\
-  =
+  &=
   \int \limits_{0}^{z_i} \lambda_0 e^{-\lambda_0 x} \left( 1 - e^{-\lambda_1 x} \right) \od{x} \\
-  =
+  &=
   \frac{\lambda_0}{\lambda_0 + \lambda_1} \left( e^{-(\lambda_0 + \lambda_1) z_i} - 1 \right) - e^{-\lambda_0 z_i} + 1
-\end{gather*}
+\end{align*}
 
 We can now find $f_{Z}(z_i ~|~ u_i = 1)$ by deriving:
-\begin{gather*}
-  f_{Z}(z_i ~|~ u_i = 1) \\
-  =
+\begin{align*}
+  f_{Z}(z_i ~|~ u_i = 1)
+  &=
   \frac{\od{F_Z}(z_i ~|~ u_i = 1)}{\od{z_i}} \\
-  =
+  &=
   -\lambda_0 e^{-(\lambda_0 + \lambda_1) z_i} + \lambda_0 e^{-\lambda_0 z_i} \\
-  =
+  &=
   \lambda_0 e^{-\lambda_0 z_i} \left( 1 - e^{-\lambda_1 z_i} \right)
-\end{gather*}
+\end{align*}
 
 Again, by the symmetry of the problem, we can find $f_{Z}(z_i ~|~ u_i = 0)$:
 \begin{equation*}
@@ -495,7 +478,6 @@ Again, by the symmetry of the problem, we can find $f_{Z}(z_i ~|~ u_i = 0)$:
 \end{equation*}
 
 The joint distribution for $\vec{z}$ and $\vec{u}$ and inversely the likelihood of $\lambda_0$ and $\lambda_1$, depending on what you consider to be the variables, can now be found:
-
 \begin{align*}
   f_{Z, U}(\vec{z}, \vec{u} ~|~ \lambda_0, \lambda_1)
   &=
@@ -542,7 +524,6 @@ Where we have defined:
 \end{align*}
 
 In order to find the maximum likelihood estimators $\hat{\lambda_0}$ and $\hat{\lambda_1}$, we derive the *score vector*:
-
 \begin{align*}
   \vec{s}(\lambda_0, \lambda_1; \vec{z}, \vec{u})
   :&=
@@ -558,7 +539,6 @@ In order to find the maximum likelihood estimators $\hat{\lambda_0}$ and $\hat{\
 \end{align*}
 
 We can now solve the optimization problem
-
 \begin{equation*}
   \hat{\lambda_0}, \hat{\lambda_1}
   =
@@ -566,7 +546,6 @@ We can now solve the optimization problem
 \end{equation*}
 
 by solving the dual problem of
-
 \begin{equation*}
   \vec{s}(\lambda_0, \lambda_1; \vec{z}, \vec{u}) = \vec{0},
 \end{equation*}
@@ -575,7 +554,6 @@ with respect to $\lambda_0$ and $\lambda_1$.
 
 Now, notice that $s_1 = \frac{\od{\ell}}{\od{\lambda_0}}$ is a function of only $\lambda_0$, not $\lambda_1$, and vice versa for $s_2$.
 The Hessian of $\ell(\lambda_0, \lambda_1; \vec{z}, \vec{u})$ is therefore diagonal with the following diagonal elements:
-
 \begin{align*}
   \frac{\partial^2 \ell}{{\partial \lambda_0}^2}
   =
