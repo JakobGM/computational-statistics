@@ -4,6 +4,7 @@ output:
   html_document: default
 ---
 ```{r, include=FALSE}
+set.seed(0)
 knitr::set_parent("base.Rmd")
 
 source(here::here("reports", "report_3", "data", "probAhelp.R"))
@@ -22,21 +23,23 @@ The innovations $\hat{e}_t$ can be estimated by
 $$
 \hat{e}_t = x_t - \hat{\beta}_1x_{t-1} - \hat{\beta}_2x_{t-2},\ t = 3,\ldots,T
 $$
-The innovations are estimated using either $\vec{\beta}_{LS}$ or $\vec{\beta}_{LA}$. We will denote the different estimated innovations by $\hat{e}_t^{LS}$ and $\hat{e}_t^{LA}$.
+The innovations are estimated using either $\hat{\vec{\beta}}_{LS}$ or $\hat{\vec{\beta}}_{LA}$. We will denote the different estimated innovations by $\hat{e}_t^{LS}$ and $\hat{e}_t^{LA}$.
 
 The estimated innovations $\hat{\epsilon}_t$ are then centered by calculating 
 
 $$
 \hat{\epsilon}_t = \hat{e}_t - \bar{e}
 $$
-We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
+We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
 
 $$
-x_t = \hat{\beta}_1x_{t-1} + \hat{\beta}_2x_{t-2} + \hat{\epsilon},
+x_t = \hat{\beta}_1x_{t-1} + \hat{\beta}_2x_{t-2} + \epsilon.
 $$
-where $\epsilon$ is chosen randomly from either the set $\{\hat{\epsilon}_3^{LS}, \ldots, \hat{\epsilon}_T^{LS}\}$ or $\{\hat{\epsilon}^{LA}_3, \ldots, \hat{\epsilon}_T^{LA}\}$, depending on which situation we're interested in. 
+$\epsilon$ is chosen randomly from either the set $\{\hat{\epsilon}_3^{LS}, \ldots, \hat{\epsilon}_T^{LS}\}$ or $\{\hat{\epsilon}^{LA}_3, \ldots, \hat{\epsilon}_T^{LA}\}$, depending on which of the two estimators $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$ we're using to obtain the sample.
 
-For each of the B resampled data sequences we estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. A histogram showing the obtained values is shown in Figure $\ref{fig:hist_ls}$ and $\ref{fig:hist_la}$.
+For each of the B resampled data sequences we estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. A histogram showing the obtained values are shown in Figure $\ref{fig:hist_ls}$ and $\ref{fig:hist_la}$.
+
+The procedure explained above can be implemented as shown below.
 
 ```{r, fig.cap="\\label{fig:hist_ls} Histogram of $\\hat{\\beta}_{LS}$ obtained from bootstrap samples of the data sequence."}
 
@@ -126,21 +129,24 @@ bootstrapped_beta_la %>%
   facet_wrap(~key, scales = "free_x")
 ```
 
-The bias can be calculated as
+The bias of the estimators can be estimated by
 
 $$
-\widehat{\text{bias}}_B = \hat{\beta}^{\star}(\cdot) - \hat{\beta},
+\widehat{\text{bias}}_B = \hat{\beta}^{\star}(\cdot) - \hat{\beta}.
 $$
-and is shown in Table $\ref{tab:ls_bias}$ and $\ref{tab:la_bias}$.
+The estimated bias for the two different estimators, $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$, is shown in Table $\ref{tab:ls_bias}$ and $\ref{tab:la_bias}$.
 
-The variance can be calculated as
+The variance can be estimated by
 
 $$
-\widehat{SE}_B^2 = \frac{\sum_{b=1}^B\left(\hat{\beta}^{\star}(b) - \hat{\beta}^{\star}(\cdot)\right)}{B-1}
+\widehat{SE}_B^2 = \frac{\sum_{b=1}^B\left(\hat{\beta}^{\star}(b) - \hat{\beta}^{\star}(\cdot)\right)}{B-1}.
 $$
-and is shown in Table $\ref{tab:ls_var}$ and $\ref{tab:la_var}$.
+The estimated variance for the two estimators can be seen in Table $\ref{tab:ls_var}$ and $\ref{tab:la_var}$.
 
-The estimated variance for $\hat{\beta}_{LS}$ is a lot higher than for $\hat{\beta}_{LA}$. In addition, the bias seems to be very similar for the two estimators. It's therefore clear that the LS estimator is not optimal for the non-Gaussian time-series in this problem, seeing as the LA estimator performs better. 
+The estimated variance for $\hat{\beta}_{LS}$ is a lot higher than for $\hat{\beta}_{LA}$. In addition, the bias seems to be very similar for the two estimators. It's therefore clear that the LS estimator is not optimal for the non-Gaussian time-series we're considering in this
+problem, seeing as the LA estimator performs better. 
+
+In the code below we implement the procedure for estimating the bias and variance of the estimators.
 ```{r}
 la_bias <- list(
   beta1_bias = bootstrapped_beta_la %>%
@@ -167,7 +173,7 @@ ls_bias <- list(
 la_bias %>% 
   as_tibble() %>%
   knitr::kable(
-    caption = "\\label{tab:la_bias}  Estimated LA bias",
+    caption = "\\label{tab:la_bias}  Estimated bias of $\\hat{\\vec{\\beta}}_{LA}$",
     col.names = c("Bias of $\\hat{\\beta}_1^{LA}$", "Bias of $\\hat{\\beta}_2^{LA}$")
   )
 
@@ -178,14 +184,14 @@ bootstrapped_beta_la %>%
     beta2_var = var(beta2)
     ) %>%
   knitr::kable(
-    caption= "\\label{tab:la_var} Estimated LA variance",
+    caption= "\\label{tab:la_var} Estimated variance of $\\hat{\\vec{\\beta}}_{LA}$",
     col.names = c("Variance of $\\hat{\\beta}_1^{LA}$", "Variance $\\hat{\\beta}_2^{LA}$")
     )
 
 ls_bias %>% 
   as_tibble() %>%
   knitr::kable(
-    caption = "\\label{tab:ls_bias} Estimated LS bias",
+    caption = "\\label{tab:ls_bias} Estimated bias of $\\hat{\\vec{\\beta}}_{LS}$",
     col.names = c("Bias of $\\hat{\\beta}_1^{LS}$", "Bias $\\hat{\\beta}_2^{LS}$")
     )
 
@@ -196,18 +202,23 @@ bootstrapped_beta_ls %>%
     beta2_var = var(beta2)
     ) %>%
   knitr::kable(
-    caption="\\label{tab:ls_var} Estimated LS variance",
+    caption="\\label{tab:ls_var} Estimated variance of $\\hat{\\vec{\\beta}}_{LS}$",
     col.names = c("Variance of $\\hat{\\beta}_1^{LS}$", "Variance $\\hat{\\beta}_2^{LS}$")
     )
 ```
 
 ### A2
 
-In order to obtain a prediction interval for $x_{101}$ we create a prediction for each of the bootstrap samples by sampling a random centered estimated innovation from the set $\{\hat{\epsilon}_3, \ldots, \hat{\epsilon}_T\}$. 
+In order to obtain a prediction interval for $x_{101}$ we create a prediction for each of the bootstrap samples by sampling a random centered estimated innovation from the set $\{\hat{\epsilon}_3, \ldots, \hat{\epsilon}_T\}$. For a specific bootstrap sample $\hat{\vec{\beta}}^{\star}$ we obtain the prediction by using the relation 
 
-The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$. 
+$$
+x_{101} = \hat{\beta}^{\star}_1x_{100} + \hat{\beta}^{\star}_2x_{99} + \epsilon.
+$$
+Again, $\epsilon$ denotes a random sample from the corresponding set of centered estimated innovations. After obtaining the predictions we calculate the 2.5th and 97.5th percentiles in order to obtain a $95\%$ confidence interval. The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$. The histogram showing the distribution of the predictions can be seen in Figure $\ref{fig:pred_hist_ls}$ and $\ref{fig:pred_hist_la}$.
 
-```{r, fig.cap="\\label{fig:pred_hist_ls} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LS}$"}
+The code for obtaining the predictions and the corresponding confidence intervals follows below. 
+
+```{r, fig.cap="\\label{fig:pred_hist_ls} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LS}$. The black lines show the confidence interval."}
 sample_x <- function(beta1, beta2, pi, x) { 
   return(beta2 * x[99] + beta1 * x[100] + sample(pi, 1))
 }
@@ -216,11 +227,6 @@ ls_sample_x <- partial(sample_x, pi=ls_pi, x = x)
   
   
 x_samples <- map2_dbl(bootstrapped_beta_ls$beta1, bootstrapped_beta_ls$beta2, ls_sample_x)
-
-enframe(x_samples, name="index") %>%
-  ggplot() +
-  geom_histogram(aes(x=value), bins=50)
-
 
 x_df <- enframe(x, name="index") %>% 
   bind_rows(
@@ -245,18 +251,23 @@ x_summary_df %>%
     caption = "\\label{tab:conf_int_ls} Confidence interval, LS",
     col.names = c("2.5th percentile", "97.5 percentile")
   )
-```
-
-
-```{r, fig.cap="\\label{fig:pred_hist_la} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LA}$"}
-la_sample_x <- partial(sample_x, pi=la_pi, x = x)
-  
-x_samples <- map2_dbl(bootstrapped_beta_la$beta1, bootstrapped_beta_la$beta2, ls_sample_x)
 
 enframe(x_samples, name="index") %>%
   ggplot() +
-  geom_histogram(aes(x=value), bins=50)
+  geom_histogram(aes(x=value), bins=50) +
+  geom_vline(aes(xintercept = x_summary_df %>%
+                   filter(index == 101) %>%
+                   pull(lq))) +
+  geom_vline(aes(xintercept = x_summary_df %>%
+                   filter(index == 101) %>%
+                   pull(uq)))
+```
 
+
+```{r, fig.cap="\\label{fig:pred_hist_la} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LA}$. The black lines show the confidence interval."}
+la_sample_x <- partial(sample_x, pi=la_pi, x = x)
+  
+x_samples <- map2_dbl(bootstrapped_beta_la$beta1, bootstrapped_beta_la$beta2, ls_sample_x)
 
 x_df <- enframe(x, name="index") %>% 
   bind_rows(
@@ -281,6 +292,16 @@ x_summary_df %>%
     caption = "\\label{tab:conf_int_la} Confidence interval, LA",
     col.names = c("2.5th percentile", "97.5 percentile")
   )
+
+enframe(x_samples, name="index") %>%
+  ggplot() +
+  geom_histogram(aes(x=value), bins=50) +
+  geom_vline(aes(xintercept = x_summary_df %>%
+                   filter(index == 101) %>%
+                   pull(lq))) +
+  geom_vline(aes(xintercept = x_summary_df %>%
+                   filter(index == 101) %>%
+                   pull(uq)))
 ```
 
 

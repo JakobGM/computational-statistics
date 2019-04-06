@@ -20,7 +20,7 @@ header-includes:
   - \newcommand{\mat}[1]{\boldsymbol{#1}}
   - \usepackage{bm}
   - \usepackage[a]{esvect}
-  - \renewcommand{\vec}[1]{\vv{\bm{#1}}}
+  - \renewcommand{\vec}[1]{\boldsymbol{#1}}
 ---
 
 ```{r setup, include=FALSE}

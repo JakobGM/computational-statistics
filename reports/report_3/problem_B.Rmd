@@ -1,4 +1,10 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ```{r, include=FALSE}
+set.seed(0)
 knitr::set_parent("base.Rmd")
 
 library(tidyverse)
@@ -10,9 +16,11 @@ library(tibble)
 
 ### B1
 
-The boxplot is shown in Figure $\ref{fig:boxplot}$. The plots suggest that there might be a difference between the persons, seeing as the variance is considerably lower for $p2$ and the mean is considerably higher for $p3$l. 
+We start off by creating boxplot in order to explore how logarithm of the concentration is distributed across the three different individuals. The boxplot is shown in Figure $\ref{fig:boxplot}$. The plots suggest that there might be a difference between the persons, seeing as the variance is considerably lower for $p2$ than it is for the other individuals. We can also observe that the mean is considerably higher for $p3$ than it is for the other individuals. 
 
-The null-hypothesis, stating that $\beta_1 = \beta_2 = \beta_3$, is rejected at significance $\alpha = 0.95$, seeing as the p-value is less than 0.05.
+We proceed by fitting a linear model to the data, assosciating a coefficient $\beta_i,\ i = 1,2,3$ with each of the individuals. We want to test whether this model performs better than the null-model. The null-hypothesis, stating that $\beta_1 = \beta_2 = \beta_3$, is rejected at significance $\alpha = 0.05$, seeing as the $p$-value is less than 0.05. 
+
+The linear model is fitted and the value of the F-statistic is calculated in the code below. 
 
 ```{r, fig.cap="\\label{fig:boxplot} Boxplot for each of the different groups"}
 bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
@@ -65,9 +73,9 @@ The null-hypothesis for the permutation test is
 $$
 H_0: \text{All data are from the same distribution}.
 $$
-The permutation test is performed below, and the resulting F-statistics are shown in Figure $\ref{fig:Fhist}$. The assosciated p-value is printed below, and can be seen to be below 0.05. We therefore reject the null-hypothesis at significance $\alpha = 0.95$, which agress with the result obtained from the F-test conducted earlier. 
+The F-statistic resulting from fitting a linear model to the data is suitable for use with the permutation test. This is because the F-statistic is able to capture some of the information about the difference between the three groups. The permutation test is performed below, and the resulting F-statistics are shown in Figure $\ref{fig:Fhist}$. The assosciated p-value can be seen in Table $\ref{tab:pval}$ and can be seen to be below 0.05. We therefore reject the null-hypothesis at significance $\alpha = 0.05$, which agress with the result obtained from the F-test conducted earlier. The permutation test leads to rejection of the null-hypothesis stating that the data come from same distribution. It's therefore not surprising to see that the F-test assosciated with linear model leads us to the conclusion that the full model is preferable to the null-model. 
 
-
+The code for running the permutation test and computing the p-value is follows below. 
 ```{r, fig.cap="\\label{fig:Fhist} Histogram showing the F-statistic obtained from the different permutations. The red line is the 95th percentile while the blue represents the value of the F-statisic computed for the original data."}
 
 perc_95 <- permTest_df %>%
@@ -85,7 +93,8 @@ p_value <- permTest_df %>%
   map_lgl(~.x >= Fval) %>%
   mean()
 
-p_value
+p_value %>% knitr::kable(caption="\\label{tab:pval} The p - value of the permutation test.",
+                         col.names="P-value")
 ```
 
 
