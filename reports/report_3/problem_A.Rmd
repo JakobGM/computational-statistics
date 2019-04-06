@@ -111,7 +111,7 @@ bootstrapped_beta_ls %>%
   facet_wrap(~key, scales = "free_x")
 ```
 
-```{r, fig.cap = fig.cap="\\label{fig:hist_la} Histogram of $\\hat{\\beta}_{LA}$ obtained from bootstrap samples of the data sequence."}
+```{r, fig.cap = "\\label{fig:hist_la} Histogram of $\\hat{\\beta}_{LA}$ obtained from bootstrap samples of the data sequence."}
 bootstrapped_beta_la <- resampled_xs_la %>%
   map(calculate_beta_la) %>%
   map(purrr::set_names, nm = c("beta1", "beta2")) %>%
