@@ -255,7 +255,21 @@ data <- tibble(
 n <- length(data$z) 
 ```
 
-We can now implement the EM algorithm, using equation \eqref{eq:em_lambda} in the M-step:
+We can now implement the EM algorithm, using equation \eqref{eq:em_lambda} in the M-step.
+We will use
+
+$$
+  || \vec{\lambda}^{(t)} - \vec{\lambda}^{(t-1)}||_1
+  = 
+  \text{max} \left(
+    |\lambda_0^{(t)} - \lambda_0^{(t-1)}|,~
+    |\lambda_1^{(t)} - \lambda_1^{(t-1)}|
+  \right)
+  <
+  \texttt{TOL}
+$$
+
+as the stopping criterion.
 
 ```{r}
 expectation_maximization <- function (data, lambda = c(1, 1), tol = 1e-4) {
@@ -297,7 +311,7 @@ expectation_maximization <- function (data, lambda = c(1, 1), tol = 1e-4) {
 }
 ```
 
-We can now invoke the EM-algorithm with our data.
+We can now invoke the EM-algorithm with $\texttt{TOL} = 10^{-4}$ and $\vec{\lambda}^{(t)} = [1, 1]$, using the provided data:
 
 ```{r}
 orig_result <- expectation_maximization(data = data)
