@@ -1,0 +1,189 @@
+---
+title: "Exercise 3 - Problem B"
+author: "Jakob G. M. og Øyvind K."
+output:
+  ioslides_presentation: default
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(broom)
+library(tibble)
+
+knitr::opts_chunk$set(echo = FALSE)
+set.seed(0)
+
+bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
+  read.table(header=T) %>%
+  as_tibble()
+```
+
+## Overview of the data
+
+Measurements of concentration of bilirubin in three individuals. Different number of measurements for each individual.
+
+```{r}
+bilirubin %>%
+  group_by(pers) %>% 
+  mutate(n = n()) %>% 
+  distinct(pers, .keep_all=T) %>%
+  select(pers, n) %>%
+  knitr::kable(col.names = c("Person", "Number of measurements"))
+```
+
+## Boxplot of measurements across individuals
+
+```{r}
+bilirubin %>%
+  mutate(log_meas = log(meas)) %>%
+  ggplot(aes(x=pers, y=log_meas)) +
+  geom_boxplot()
+```
+
+
+
+## Fitting a linear model
+
+$$
+H_0: \beta_1 = \beta_2 = \beta_3 \\
+H_1: \beta_i \neq \beta_j\text{ for some }i \neq j
+$$
+
+
+```{r}
+linear_model <- lm(log(meas)~pers, data=bilirubin)
+
+Fval <- linear_model %>%
+  glance() %>%
+  pull(statistic)
+
+linear_model %>%
+  glance() %>%
+  select(statistic, p.value) %>% 
+  knitr::kable(col.names=c("F-statistic", "p-value"))
+```
+
+This leads to rejection of the null hypothesis.
+
+
+## Permutation test
+
+- Randomly assign measurements to individuals. 
+- Fit linear model.
+- Calculate the F-statistic.
+- Repeat $N$ times.
+
+$$
+H_0:\text{ All measurements come from the same distribution} \\
+H_1:\text{ The measurements are not from the same distribution}
+$$
+Reject $H_0$ if the F-statistic of the original data is larger than $95\%$ of F-statistics obtained from permuting the data. 
+
+## Implementation of the permutation test
+
+```{r, echo=TRUE}
+permTest <- function(df) {
+  perm_df <- tibble(
+    meas = df %>%
+      pull(meas) %>%
+      sample(),
+    pers = df %>%
+      pull(pers)
+  )
+  lm(log(meas) ~ pers, data = perm_df) %>%
+    glance() %>%
+    pull(statistic)
+}
+```
+
+## Conducting the permutation test
+
+```{r, echo=TRUE}
+permTest_df <- tibble(
+  run = seq(1, 999),
+  F_stat = 999 %>%
+    rerun(permTest(bilirubin))
+) %>%
+  unnest()
+```
+
+```{r}
+permTest_df %>%
+  head(2) %>%
+  bind_rows(permTest_df %>%
+  tail(1)) %>%
+  knitr::kable()
+```
+
+
+## Results
+
+```{r}
+perc_95 <- permTest_df %>%
+  pull(F_stat) %>% 
+  quantile(probs = c(0.95))
+
+permTest_df %>%
+  ggplot(aes(x=F_stat)) +
+  geom_histogram(bins=50) +
+  geom_vline(aes(xintercept=perc_95), color="red") +
+  geom_vline(aes(xintercept=Fval), color="blue") +
+  annotate("text", x = 2, y= 150, color="red", label="95th percentile") +
+  annotate("text", x = 5.5, y= 150, color="blue", label="Original F-statistic")
+  
+
+p_value <- permTest_df %>%
+  pull(F_stat) %>%
+  map_lgl(~.x >= Fval) %>%
+  mean()
+```
+
+## Results
+
+$$
+\text{Original F-statistic: }`r Fval` \\
+\text{95th percentile: }  `r perc_95` \\
+\text{P-value: } `r p_value`
+$$
+
+P-value is less than $0.05$, so we reject at significance level $\alpha = 0.05$. The original F-statistic is larger than the 95th percentile of F-statistics obtained from permuting the data. 
+
+## Histogram and 95th percentile as $N$ grows
+
+```{r, fig.height=2.2, fig.width=4, warning=FALSE}
+N <- 2000
+frames <- 50
+
+permTest_df <- tibble(
+  run = seq(1, N),
+  F_stat = N %>%
+    rerun(permTest(bilirubin))
+) %>%
+  unnest()
+
+anim_df <- seq(0, frames) %>%
+  map_dfr(~permTest_df %>%
+            slice(0:(N/frames * (.x + 1))) %>%
+            mutate(
+              frame = .x + 1,
+              perc_95 = F_stat %>%
+                quantile(probs = c(0.95))))
+
+binwidth = 0.2
+anim_df %>%
+  ggplot(aes(y = ..density..* binwidth, x=F_stat)) +
+  geom_histogram(binwidth = binwidth) +
+  geom_vline(aes(xintercept=perc_95), color="red") + 
+  geom_vline(aes(xintercept=Fval), color="blue") +
+  ylim(0, 0.2) +
+  xlim(0, 8) +
+  ylab("Density") + 
+  xlab("F-statistic") + 
+  annotate("text", x = 2, y= 0.2, color="red", label="95th percentile") +
+  annotate("text", x = 5.5, y= 0.2, color="blue", label="Original F-statistic") +
+  ggtitle("Number of permutations: {frame * N/nframes}") + 
+  gganimate::transition_states(frame, transition_length = 1, state_length = 1)
+```
+
