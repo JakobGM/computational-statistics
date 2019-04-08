@@ -58,11 +58,17 @@ source(here::here("reports", "report_3", "data", "probAhelp.R"))
 
 We start off by using the supplied function to estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$.
 
+```{r}
+x <- data3A$x
+beta <- ARp.beta.est(x, 2)
+```
+
 The innovations $\hat{e}_t$ can be estimated by 
 
 $$
 \hat{e}_t = x_t - \hat{\beta}_1x_{t-1} - \hat{\beta}_2x_{t-2},\ t = 3,\ldots,T
 $$
+
 The innovations are estimated using either $\hat{\vec{\beta}}_{LS}$ or $\hat{\vec{\beta}}_{LA}$. We will denote the different estimated innovations by $\hat{e}_t^{LS}$ and $\hat{e}_t^{LA}$.
 
 The estimated innovations $\hat{\epsilon}_t$ are then centered by calculating 
@@ -70,23 +76,10 @@ The estimated innovations $\hat{\epsilon}_t$ are then centered by calculating
 $$
 \hat{\epsilon}_t = \hat{e}_t - \bar{e}
 $$
-We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
 
-$$
-x_t = \hat{\beta}_1x_{t-1} + \hat{\beta}_2x_{t-2} + \epsilon.
-$$
-$\epsilon$ is chosen randomly from either the set $\{\hat{\epsilon}_3^{LS}, \ldots, \hat{\epsilon}_T^{LS}\}$ or $\{\hat{\epsilon}^{LA}_3, \ldots, \hat{\epsilon}_T^{LA}\}$, depending on which of the two estimators $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$ we're using to obtain the sample.
+This is implemented by the function `estimate_pseudo_innovations`.
 
-For each of the B resampled data sequences we estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$. A histogram showing the obtained values are shown in Figure $\ref{fig:hist_ls}$ and $\ref{fig:hist_la}$.
-
-The procedure explained above can be implemented as shown below.
-
-```{r, fig.cap="\\label{fig:hist_ls} Histogram of $\\hat{\\beta}_{LS}$ obtained from bootstrap samples of the data sequence."}
-
-x <- data3A$x
-
-beta <- ARp.beta.est(x, 2)
-
+```{r}
 estimate_pseudo_innovations <- function(beta, x) {
   L <- length(x)
   xs <- list(
@@ -106,11 +99,24 @@ estimate_pseudo_innovations <- function(beta, x) {
 
 ls_pi <- estimate_pseudo_innovations(beta$LS, x)
 la_pi <- estimate_pseudo_innovations(beta$LA, x)
+```
 
+We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
+
+$$
+x_t = \hat{\beta}_1x_{t-1} + \hat{\beta}_2x_{t-2} + \epsilon.
+$$
+$\epsilon$ is chosen randomly from either the set $\{\hat{\epsilon}_3^{LS}, \ldots, \hat{\epsilon}_T^{LS}\}$ or $\{\hat{\epsilon}^{LA}_3, \ldots, \hat{\epsilon}_T^{LA}\}$, depending on which of the two estimators $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$ we're using to obtain the sample.
+
+```{r}
 calculate_xt <- function(beta, xt1, xt2, pi) {
   beta[1] * xt1 + beta[2] * xt2 + pi
 }
+```
 
+For each of the B resampled data sequences we estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$.
+
+```{r}
 resample_x <- function(pseudo_innovations, beta, x) {
   L <- length(x)
   rs_pi <- sample(pseudo_innovations,
@@ -147,6 +153,17 @@ bootstrapped_beta_ls <- resampled_xs_ls %>%
   as_tibble() %>%
   unnest()
 
+bootstrapped_beta_la <- resampled_xs_la %>%
+  map(calculate_beta_la) %>%
+  map(purrr::set_names, nm = c("beta1", "beta2")) %>%
+  transpose() %>%
+  as_tibble() %>%
+  unnest()
+```
+
+A histogram showing the obtained values are shown in Figure $\ref{fig:hist_ls}$ and $\ref{fig:hist_la}$.
+
+```{r, fig.cap="\\label{fig:hist_ls} Histogram of $\\hat{\\beta}_{LS}$ obtained from bootstrap samples of the data sequence."}
 bootstrapped_beta_ls %>%
   gather() %>% 
   ggplot(aes(x = value)) +
@@ -155,13 +172,6 @@ bootstrapped_beta_ls %>%
 ```
 
 ```{r, fig.cap = "\\label{fig:hist_la} Histogram of $\\hat{\\beta}_{LA}$ obtained from bootstrap samples of the data sequence."}
-bootstrapped_beta_la <- resampled_xs_la %>%
-  map(calculate_beta_la) %>%
-  map(purrr::set_names, nm = c("beta1", "beta2")) %>%
-  transpose() %>%
-  as_tibble() %>%
-  unnest()
-
 bootstrapped_beta_la %>%
   gather() %>% 
   ggplot(aes(x = value)) +
