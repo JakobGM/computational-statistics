@@ -287,18 +287,14 @@ $$
 x_{101} = \hat{\beta}^{\star}_1x_{100} + \hat{\beta}^{\star}_2x_{99} + \epsilon.
 $$
 
-Again, $\epsilon$ denotes a random sample from the corresponding set of centered estimated innovations. After obtaining the predictions we calculate the 2.5th and 97.5th percentiles in order to obtain a $95\%$ confidence interval. The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$. The histogram showing the distribution of the predictions can be seen in Figure $\ref{fig:pred_hist_ls}$ and $\ref{fig:pred_hist_la}$.
+Again, $\epsilon$ denotes a random sample from the corresponding set of centered estimated innovations.
 
-The code for obtaining the predictions and the corresponding confidence intervals follows below. 
-
-```{r, fig.cap="\\label{fig:pred_hist_ls} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LS}$. The black lines show the confidence interval."}
+```{r}
 sample_x <- function(beta1, beta2, pi, x) { 
   return(beta2 * x[99] + beta1 * x[100] + sample(pi, 1))
 }
 
 ls_sample_x <- partial(sample_x, pi=ls_pi, x = x)
-  
-  
 x_samples <- map2_dbl(bootstrapped_beta_ls$beta1, bootstrapped_beta_ls$beta2, ls_sample_x)
 
 x_df <- enframe(x, name="index") %>% 
@@ -308,7 +304,11 @@ x_df <- enframe(x, name="index") %>%
       value = x_samples
     )
   ) 
+```
 
+After obtaining the predictions we calculate the 2.5th and 97.5th percentiles in order to obtain a $95\%$ confidence interval.
+
+```{r}
 x_summary_df <- x_df %>%
   group_by(index) %>%
   summarise(
@@ -324,7 +324,11 @@ x_summary_df %>%
     caption = "\\label{tab:conf_int_ls} Confidence interval, LS",
     col.names = c("2.5th percentile", "97.5 percentile")
   )
+```
 
+The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$.
+
+```{r, fig.cap="\\label{fig:pred_hist_ls} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LS}$. The black lines show the confidence interval."}
 enframe(x_samples, name="index") %>%
   ggplot() +
   geom_histogram(aes(x=value), bins=50) +
@@ -336,6 +340,7 @@ enframe(x_samples, name="index") %>%
                    pull(uq)))
 ```
 
+The histogram showing the distribution of the predictions can be seen in Figure $\ref{fig:pred_hist_ls}$ and $\ref{fig:pred_hist_la}$.
 
 ```{r, fig.cap="\\label{fig:pred_hist_la} Predicted values of $x_{101}$ using $\\hat{\\vec{\\beta}}_{LA}$. The black lines show the confidence interval."}
 la_sample_x <- partial(sample_x, pi=la_pi, x = x)
