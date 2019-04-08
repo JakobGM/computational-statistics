@@ -179,24 +179,27 @@ bootstrapped_beta_la %>%
   facet_wrap(~key, scales = "free_x")
 ```
 
-The bias of the estimators can be estimated by
+The \textit{bias} of our estimator is defined as
+
+\begin{equation*}
+  \text{bias}_F\left(\hat{\beta}, \beta\right) = E_F\left[\hat{\beta}\right] - \beta,
+\end{equation*}
+
+where $F$ is the real AR(2) distribution of our model.
+Since we do not know the parametrization of the underlying model, this must be estimated with our bootstrap replicates $\hat{\beta}^{\star}$
 
 $$
-\widehat{\text{bias}}_B = \hat{\beta}^{\star}(\cdot) - \hat{\beta}.
+\widehat{\text{bias}}_B = \hat{\beta}^{\star}(\cdot) - \hat{\beta},
 $$
-The estimated bias for the two different estimators, $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$, is shown in Table $\ref{tab:ls_bias}$ and $\ref{tab:la_bias}$.
 
-The variance can be estimated by
+where we have defined
 
-$$
-\widehat{SE}_B^2 = \frac{\sum_{b=1}^B\left(\hat{\beta}^{\star}(b) - \hat{\beta}^{\star}(\cdot)\right)}{B-1}.
-$$
-The estimated variance for the two estimators can be seen in Table $\ref{tab:ls_var}$ and $\ref{tab:la_var}$.
+\begin{equation*}
+  \hat{\beta}^{\star}(\cdot) := \frac{1}{B} \sum \limits_{b = 1}^{B} \hat{\beta}^{\star}(b).
+\end{equation*}
 
-The estimated variance for $\hat{\beta}_{LS}$ is a lot higher than for $\hat{\beta}_{LA}$. In addition, the bias seems to be very similar for the two estimators. It's therefore clear that the LS estimator is not optimal for the non-Gaussian time-series we're considering in this
-problem, seeing as the LA estimator performs better. 
+The estimated bias for the two components of the two different estimators, $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$, can now be calculated.
 
-In the code below we implement the procedure for estimating the bias and variance of the estimators.
 ```{r}
 la_bias <- list(
   beta1_bias = bootstrapped_beta_la %>%
@@ -220,12 +223,42 @@ ls_bias <- list(
     subtract(beta$LS[[2]])  
 )
 
+ls_bias %>% 
+  as_tibble() %>%
+  knitr::kable(
+    caption = "\\label{tab:ls_bias} Estimated bias of $\\hat{\\vec{\\beta}}_{LS}$",
+    col.names = c("Bias of $\\hat{\\beta}_1^{LS}$", "Bias $\\hat{\\beta}_2^{LS}$")
+    )
+
 la_bias %>% 
   as_tibble() %>%
   knitr::kable(
     caption = "\\label{tab:la_bias}  Estimated bias of $\\hat{\\vec{\\beta}}_{LA}$",
     col.names = c("Bias of $\\hat{\\beta}_1^{LA}$", "Bias of $\\hat{\\beta}_2^{LA}$")
   )
+```
+
+The bias estimation results are shown in Table $\ref{tab:ls_bias}$ and $\ref{tab:la_bias}$.
+
+The variance can be estimated by
+
+$$
+\widehat{\text{Var}}_B = \frac{1}{B-1} \sum_{b=1}^B\left(\hat{\beta}^{\star}(b) - \hat{\beta}^{\star}(\cdot)\right)^2,
+$$
+
+which we also implement in the following code:
+
+```{r}
+bootstrapped_beta_ls %>%
+  select(beta1, beta2) %>%
+  summarize(
+    beta1_var = var(beta1),
+    beta2_var = var(beta2)
+    ) %>%
+  knitr::kable(
+    caption="\\label{tab:ls_var} Estimated variance of $\\hat{\\vec{\\beta}}_{LS}$",
+    col.names = c("Variance of $\\hat{\\beta}_1^{LS}$", "Variance $\\hat{\\beta}_2^{LS}$")
+    )
 
 bootstrapped_beta_la %>%
   select(beta1, beta2) %>%
@@ -238,24 +271,13 @@ bootstrapped_beta_la %>%
     col.names = c("Variance of $\\hat{\\beta}_1^{LA}$", "Variance $\\hat{\\beta}_2^{LA}$")
     )
 
-ls_bias %>% 
-  as_tibble() %>%
-  knitr::kable(
-    caption = "\\label{tab:ls_bias} Estimated bias of $\\hat{\\vec{\\beta}}_{LS}$",
-    col.names = c("Bias of $\\hat{\\beta}_1^{LS}$", "Bias $\\hat{\\beta}_2^{LS}$")
-    )
-
-bootstrapped_beta_ls %>%
-  select(beta1, beta2) %>%
-  summarize(
-    beta1_var = var(beta1),
-    beta2_var = var(beta2)
-    ) %>%
-  knitr::kable(
-    caption="\\label{tab:ls_var} Estimated variance of $\\hat{\\vec{\\beta}}_{LS}$",
-    col.names = c("Variance of $\\hat{\\beta}_1^{LS}$", "Variance $\\hat{\\beta}_2^{LS}$")
-    )
 ```
+
+The results can be seen in Table $\ref{tab:ls_var}$ and $\ref{tab:la_var}$.
+
+The estimated variance for $\hat{\beta}_{LS}$ is a lot higher than for $\hat{\beta}_{LA}$. In addition, the bias seems to be very similar for the two estimators. It's therefore clear that the LS estimator is not optimal for the non-Gaussian time-series we're considering in this
+problem, seeing as the LA estimator performs better. 
+
 
 ### A2
 
@@ -264,6 +286,7 @@ In order to obtain a prediction interval for $x_{101}$ we create a prediction fo
 $$
 x_{101} = \hat{\beta}^{\star}_1x_{100} + \hat{\beta}^{\star}_2x_{99} + \epsilon.
 $$
+
 Again, $\epsilon$ denotes a random sample from the corresponding set of centered estimated innovations. After obtaining the predictions we calculate the 2.5th and 97.5th percentiles in order to obtain a $95\%$ confidence interval. The resulting confidence intervals are shown in Table $\ref{tab:conf_int_ls}$ and $\ref{tab:conf_int_la}$. The histogram showing the distribution of the predictions can be seen in Figure $\ref{fig:pred_hist_ls}$ and $\ref{fig:pred_hist_la}$.
 
 The code for obtaining the predictions and the corresponding confidence intervals follows below. 
