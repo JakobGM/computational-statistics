@@ -381,7 +381,7 @@ for (bootstrap in bs_data$splits) {
 ```
 
 The idea is now that the bootstrap replicates $[(\hat{\lambda_0}^{(1)}, \hat{\lambda_1}^{(1)}), ..., (\hat{\lambda_0}^{(B)}, \hat{\lambda_1}^{(B)})]$ can be considered to be approximate samples of the distribution of $\vec{\lambda}_{\text{EM}}$.
-We can therefore estimate the standard deviation, bias, and correlation of $\vec{\lambda}_{\text{EM}}$ in order to make inferences from the original EM-result.
+We can therefore estimate the standard deviation, bias, and correlation of $\vec{\lambda}_{\text{EM}}$ from the bootstrap replicates in order to make inferences from the original EM-result.
 
 ```{r, fig.pos = "!h"}
 library(corrr)
@@ -614,6 +614,16 @@ lambda_mle <- c(
 )
 print(lambda_mle)
 ```
+
+The result of the log likelihood estimation is $\vec{\lambda}_{\text{MLE}} \approx [3.466, 9.353]$.
+Comparing this to the result of the EM-algorithm, $\vec{\hat{\lambda}}_{\text{EM}} \approx [3.466, 9.353]$, they yield the same result to three decimal digits.
+The exact difference, $\vec{\hat{\lambda}}_{\text{EM}} - \vec{\lambda}_{\text{MLE}}$, is
+
+```{r}
+orig_result$final_lambda$value - lambda_mle
+```
+
+So both values are equal to at least 5 decimals, which strengthen our belief in the correctness of both implementations.
 
 Some of the advantages of optimizing the likelihood directly compared to the EM algorithm are:
 
