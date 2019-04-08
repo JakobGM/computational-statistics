@@ -7,14 +7,54 @@ output:
 set.seed(0)
 knitr::set_parent("base.Rmd")
 
-source(here::here("reports", "report_3", "data", "probAhelp.R"))
-source(here::here("reports", "report_3", "data", "probAdata.R"))
-
 library(magrittr)
 library(tidyverse)
 library(purrr)
 ```
+
 ## Problem A
+
+In this problem we will analyze the data \texttt{data3A\$x} provided in the file \texttt{probAdata.R}.
+
+```{r}
+source(here::here("reports", "report_3", "data", "probAdata.R"))
+```
+
+The data is assumed to be distributed according to the AR(2) model defined by the relation
+
+$$
+x_t = \beta_1 x_{t -1} + \beta_2 x_{t - 2} + e_t
+$$
+
+where $e_t$ are iid random variables with zero mean and constant variance, i.e. a non-Gaussian time-series.
+Our sequence is of length $T = 100$.
+
+We will use two methods in order to estimate $\vec{\beta} := [\beta_1, \beta_2]$:
+
+\begin{align*}
+    \hat{\vec{\beta}}_{LS}
+    &=
+    \underset{\beta_1, \beta_2}{\text{argmin}}~Q_{LS}(\vec{x}),
+    %
+    & Q_{LS}(\vec{x})
+    :=
+    \sum \limits_{t = 3}^{T} \left( x_t -\beta_1 x_{t - 1} - \beta_2 x_{t - 2} \right)^2.
+  \\
+    \hat{\vec{\beta}}_{LA}
+    &=
+    \underset{\beta_1, \beta_2}{\text{argmin}}~Q_{LA}(\vec{x}),
+    %
+    & Q_{LA}(\vec{x})
+    :=
+    \sum \limits_{t = 3}^{T} \left| x_t -\beta_1 x_{t - 1} - \beta_2 x_{t - 2} \right|.
+\end{align*}
+
+With other words, optimizing the sum of squared residuals (LS) or the absolute residuals (LA), respectively.
+The minimizers can be calculated with the \texttt{R}-function \texttt{ARp.beta.est} provided in the file \texttt{probAhelp.R}.
+
+```{r}
+source(here::here("reports", "report_3", "data", "probAhelp.R"))
+```
 
 We start off by using the supplied function to estimate $\vec{\beta}_{LS}$ and $\vec{\beta}_{LA}$.
 
