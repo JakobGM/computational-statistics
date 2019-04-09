@@ -10,6 +10,7 @@ knitr::set_parent("base.Rmd")
 library(tidyverse)
 library(broom)
 library(tibble)
+library(kableExtra)
 ```
 
 ## Problem B
@@ -28,7 +29,7 @@ The concentration of bilirubin (mg/dL) in blood samples from three young men was
   \label{tab:bilirubin_data}
 \end{table}
 
-The resulting data is shown in table \ref{tab:bilirubin_data}, and provided in the file \texttt{bilirubin.txt}.
+The data is shown in Table \ref{tab:bilirubin_data}, and provided in the file \texttt{bilirubin.txt}.
 
 ```{r}
 bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
@@ -97,7 +98,7 @@ Fstat <- linear_model %>%
   select(statistic, p.value)
 
 Fval <- Fstat$statistic
-Fstat %>% kable(format = "pandoc", caption = "\\label{tab:Fstat}Result of F-test.")
+Fstat %>% kable(format = "pandoc", caption = "\\label{tab:Fstat}Result of F-test.", col.names = c("F-statistic", "P-value"))
 ```
 
 The null-hypothesis must be rejected at a significance level of $\alpha = 0.05$, seeing as the $p$-value is less than 0.05.

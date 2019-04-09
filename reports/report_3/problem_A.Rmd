@@ -102,7 +102,7 @@ la_pi <- estimate_pseudo_innovations(beta$LA, x)
 
 The residuals are plotted in Figure \ref{fig:resids}. We observe that the residuals are evenly distributed around 0, except for one residual which is much larger than all others. 
 
-```{r, fig.cap=\\label{fig:resids} Estimated centered residuals using the two estimators.}
+```{r, fig.cap="\\label{fig:resids} Estimated centered residuals using the two estimators."}
 residuals_df <- map2_dfr(
   list(ls_pi, la_pi), list("ls", "la"),
   ~tibble(residual = .x,
