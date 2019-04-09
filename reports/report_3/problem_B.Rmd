@@ -167,7 +167,7 @@ p_value %>% knitr::kable(
   kable_styling(latex_options=c("hold_position"))
 ```
 
-The resulting F-statistics are shown in figure $\ref{fig:Fhist}$.
+The resulting F-statistics are shown in Figure $\ref{fig:Fhist}$.
 
 The associated $p$-value can be seen in table $\ref{tab:pval}$ and can be seen to be below 0.05.
 We therefore reject the null-hypothesis at significance level of $\alpha = 0.05$, which agrees with the result obtained from the F-test conducted earlier.

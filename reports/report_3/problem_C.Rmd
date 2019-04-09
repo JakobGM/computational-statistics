@@ -343,7 +343,7 @@ orig_result$lambdas %>%
 
 \newpage
 
-As we can see in figure \ref{fig:em_convergence} the EM-algorithm converges quite rapidly.
+As we can see in Figure \ref{fig:em_convergence} the EM-algorithm converges quite rapidly.
 
 
 ## Bootstrapping
