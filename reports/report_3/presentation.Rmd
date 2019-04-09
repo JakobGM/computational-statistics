@@ -33,6 +33,13 @@ bilirubin %>%
   knitr::kable(col.names = c("Person", "Number of measurements"))
 ```
 
+## Regression model
+
+$\log Y_{ij} = \beta_{i} + \epsilon_{ij}$,\ $i = 1,2,3$,\ $j = 1,\ldots,n_i$. 
+
+$\epsilon_{ij} \sim \mathcal{N}(0, \sigma^2)$
+
+
 ## Boxplot of measurements across individuals
 
 ```{r}

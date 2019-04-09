@@ -27,7 +27,7 @@ for $i = 1, ..., n$ and where $I$ is the indicator function.
 
 The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
 \begin{gather*}
-  \mathcal{L}(\lambda_0, \lambda_0; \vec{x}, \vec{y}) \\
+  \mathcal{L}(\lambda_0, \lambda_1; \vec{x}, \vec{y}) \\
   =
     \prod_{i = 1}^n f_x(x_i | \lambda_0)
     \cdot
@@ -219,7 +219,7 @@ We can now combine equations \eqref{eq:first}, \eqref{eq:second}, and \eqref{eq:
 \newcommand{\Q}[0]{\ensuremath{Q(\lambda_0, \lambda_1)}}
 
 Here we have denoted this conditional expectation of the log likelihood as $\Q$, and the first and second sum in the equation as $S_0$ and $S_1$, respectively.
-This will simplify the notation going forwards.
+This will simplify the notation going forward.
 
 
 ## EM algorithm
@@ -473,7 +473,7 @@ Start by finding $F_{Z}(z_i ~|~ u_i = 1)$:
   \frac{\lambda_0}{\lambda_0 + \lambda_1} \left( e^{-(\lambda_0 + \lambda_1) z_i} - 1 \right) - e^{-\lambda_0 z_i} + 1
 \end{align*}
 
-We can now find $f_{Z}(z_i ~|~ u_i = 1)$ by deriving:
+We can now find $f_{Z}(z_i ~|~ u_i = 1)$ by differentiating:
 \begin{align*}
   f_{Z}(z_i ~|~ u_i = 1)
   &=
@@ -628,7 +628,7 @@ So both values are equal to at least 5 decimals, which strengthen our belief in 
 Some of the advantages of optimizing the likelihood directly compared to the EM algorithm are:
 
 \begin{itemize}
-  \item Only one optimization is necessary, compared to the EM algorithm where you might have to optimize differently parametrized functions iteratively.
+  \item Only one optimization is necessary, compared to the EM algorithm where you might have to optimize differently parametrized functions iteratively. However, the EM-algorithm is rarely applied when explicit expressions for the minimizers can not be found. 
   \item The Fisher information matrix can be calculated in order to infer the degree of information encoded in the maximum likelihood.
-  \item You optimize the function of interest directly, instead of only approximating it.
+  \item You optimize the function of interest directly, instead of only approximating it. 
 \end{itemize}

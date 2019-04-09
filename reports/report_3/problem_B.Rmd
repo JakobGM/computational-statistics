@@ -151,7 +151,9 @@ permTest_df %>%
   ggplot(aes(x=F_stat)) +
   geom_histogram(bins=50) +
   geom_vline(aes(xintercept=perc_95), color="red") +
-  geom_vline(aes(xintercept=Fval), color="blue")
+  geom_vline(aes(xintercept=Fval), color="blue") + 
+  annotate("text", x = 2, y= 150, color="red", label="95th percentile") +
+  annotate("text", x = 5.5, y= 150, color="blue", label="Original F-statistic")
 
 p_value <- permTest_df %>%
   pull(F_stat) %>%

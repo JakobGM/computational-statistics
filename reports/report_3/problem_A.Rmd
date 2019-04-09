@@ -26,8 +26,7 @@ $$
 x_t = \beta_1 x_{t -1} + \beta_2 x_{t - 2} + e_t
 $$
 
-where $e_t$ are iid random variables with zero mean and constant variance, i.e. a non-Gaussian time-series.
-Our sequence is of length $T = 100$.
+where $e_t$ are iid random variables with zero mean and constant variance, with no assumption on the exact distribution.This makes $\vec{x}$ a non-Gaussian time-series. Our sequence is of length $T = 100$.
 
 We will use two methods in order to estimate $\vec{\beta} := [\beta_1, \beta_2]$:
 
@@ -100,6 +99,23 @@ estimate_pseudo_innovations <- function(beta, x) {
 ls_pi <- estimate_pseudo_innovations(beta$LS, x)
 la_pi <- estimate_pseudo_innovations(beta$LA, x)
 ```
+
+The residuals are plotted in Figure \ref{fig:resids}. We observe that the residuals are evenly distributed around 0, except for one residual which is much larger than all others. 
+
+```{r, fig.cap=\\label{fig:resids} Estimated centered residuals using the two estimators.}
+residuals_df <- map2_dfr(
+  list(ls_pi, la_pi), list("ls", "la"),
+  ~tibble(residual = .x,
+          index = seq(1, length(.x)),
+          type = .y)
+)
+
+residuals_df %>%
+  ggplot(aes(x=index, y=residual)) + 
+  geom_point(bins=50) +
+  facet_wrap(~type)
+```
+
 
 We proceed by obtaining $B = 1500$ bootstrap samples of the data sequence for each of the estimators $\hat{\vec{\beta}}_{LS}$ and $\hat{\vec{\beta}}_{LA}$. Each bootstrap sample is obtained by first picking a random consecutive sequence of length 2 from the original data sequence $\vec{x}$ and calculating the remaining $T - 2$ data points by using the relation 
 
@@ -382,5 +398,4 @@ enframe(x_samples, name="index") %>%
                    pull(uq)))
 ```
 
-
-
+The value of $x_{100}$ is `r x[100]`, and the predictions based on both estimators suggests that $x_{101}$ most likely will increase or decrease by less than $\sim 8$. It's worth noting that the large residual observed in Figure \ref{fig:resids} affects the predicted values by contributing to extreme outliers such as the one seen to the right in Figure \ref{fig:pred_hist_la} and \ref{fig:pred_hist_ls}.
