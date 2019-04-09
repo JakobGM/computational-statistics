@@ -201,7 +201,7 @@ The \textit{bias} of our estimator is defined as
   \text{bias}_F\left(\hat{\beta}, \beta\right) = E_F\left[\hat{\beta}\right] - \beta,
 \end{equation*}
 
-where $F$ is the real AR(2) distribution of our model.
+where $F$ is the true distribution of the time series.
 Since we do not know the parametrization of the underlying model, this must be estimated with our bootstrap replicates $\hat{\beta}^{\star}$
 
 $$
@@ -297,7 +297,7 @@ problem, seeing as the LA estimator performs better.
 
 ### A2
 
-In order to obtain a prediction interval for $x_{101}$ we create a prediction for each of the bootstrap samples by sampling a random centered estimated innovation from the set $\{\hat{\epsilon}_3, \ldots, \hat{\epsilon}_T\}$. For a specific bootstrap sample $\hat{\vec{\beta}}^{\star}$ we obtain the prediction by using the relation 
+In order to obtain a prediction interval for $x_{101}$ we create a prediction for each of the bootstrap samples by sampling a random centered estimated innovation from the set $\{\hat{\epsilon}_3, \ldots, \hat{\epsilon}_T\}$. For a specific bootstrap replicate $\hat{\vec{\beta}}^{\star}$ we obtain the prediction by using the relation 
 
 $$
 x_{101} = \hat{\beta}^{\star}_1x_{100} + \hat{\beta}^{\star}_2x_{99} + \epsilon.
@@ -337,7 +337,7 @@ x_summary_df %>%
   filter(index == 101) %>%
   select(lq, uq) %>%
   knitr::kable(
-    caption = "\\label{tab:conf_int_ls} Confidence interval, LS",
+    caption = "\\label{tab:conf_int_ls} Confidence interval for $x_{101}$ using $\\hat{\\vec{\\beta}}^{\\star}_{LS}$",
     col.names = c("2.5th percentile", "97.5 percentile")
   )
 ```
@@ -383,7 +383,7 @@ x_summary_df %>%
   filter(index == 101) %>%
   select(lq, uq) %>%
   knitr::kable(
-    caption = "\\label{tab:conf_int_la} Confidence interval, LA",
+    caption = "\\label{tab:conf_int_la} Confidence interval for $x_{101}$ using $\\hat{\\vec{\\beta}}^{\\star}_{LA}$",
     col.names = c("2.5th percentile", "97.5 percentile")
   )
 
