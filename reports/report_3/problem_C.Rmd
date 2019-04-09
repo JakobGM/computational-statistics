@@ -27,7 +27,7 @@ for $i = 1, ..., n$ and where $I$ is the indicator function.
 
 The likelihood function for the complete data $(\vec{x}, \vec{y})$ is
 \begin{gather*}
-  L(\lambda_0, \lambda_0; \vec{x}, \vec{y}) \\
+  \mathcal{L}(\lambda_0, \lambda_0; \vec{x}, \vec{y}) \\
   =
     \prod_{i = 1}^n f_x(x_i | \lambda_0)
     \cdot
