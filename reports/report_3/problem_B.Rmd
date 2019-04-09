@@ -105,40 +105,43 @@ The null-hypothesis must be rejected at a significance level of $\alpha = 0.05$,
 
 ### B2
 
-A function that randomly assigns the data to the three different groups, fits a linear model to the data and returns the F-statistics is implemented below.
+A function that randomly assigns the data to the three different groups, fits a linear model to the data and returns the F-statistics is implemented `permTest()` below.
 
 ```{r}
 permTest <- function(df){
-  perm_df <- tibble(meas = df %>%
-                      pull(meas) %>% 
-                      sample(),
-                    pers = df %>% 
-                      pull(pers)
+  perm_df <- tibble(
+    meas = df %>% pull(meas) %>%sample(),
+    pers = df %>% pull(pers)
   )
   lm(log(meas)~pers, data=perm_df) %>% 
     glance() %>% 
     pull(statistic)
 }
-
-permTest_df <- tibble(
-  run = seq(1, 999),
-  F_stat = 999 %>%
-    rerun(permTest(bilirubin))
-  ) %>%
-  unnest()
 ```
 
 ### B3
 
-The null-hypothesis for the permutation test is
+We now apply `permTest()` in order to generate $999$ samples of the F-statistic:
+
+```{r}
+permTest_df <- tibble(
+    run = seq(1, 999),
+    F_stat = 999 %>% rerun(permTest(bilirubin))
+  ) %>%
+  unnest()
+```
+
+The null-hypothesis for the permutation test is now
 
 $$
-H_0: \text{All data are from the same distribution}.
+  \mathrm{H}_0: \text{All data are from the same distribution}.
 $$
-The F-statistic resulting from fitting a linear model to the data is suitable for use with the permutation test. This is because the F-statistic is able to capture some of the information about the difference between the three groups. The permutation test is performed below, and the resulting F-statistics are shown in Figure $\ref{fig:Fhist}$. The assosciated p-value can be seen in Table $\ref{tab:pval}$ and can be seen to be below 0.05. We therefore reject the null-hypothesis at significance $\alpha = 0.05$, which agress with the result obtained from the F-test conducted earlier. The permutation test leads to rejection of the null-hypothesis stating that the data come from same distribution. It's therefore not surprising to see that the F-test assosciated with linear model leads us to the conclusion that the full model is preferable to the null-model. 
 
-The code for running the permutation test and computing the p-value is follows below. 
-```{r, fig.cap="\\label{fig:Fhist} Histogram showing the F-statistic obtained from the different permutations. The red line is the 95th percentile while the blue represents the value of the F-statisic computed for the original data."}
+The F-statistic resulting from fitting a linear model to the data is suitable for use with the permutation test.
+This is because the F-statistic is able to capture some of the information about the difference between the three groups.
+The permutation test is performed below.
+
+```{r, fig.cap="\\label{fig:Fhist}Histogram showing the F-statistic obtained from the different permutations. The red line is the 95th percentile while the blue represents the value of the F-statistic computed for the original data."}
 
 perc_95 <- permTest_df %>%
   pull(F_stat) %>% 
@@ -155,10 +158,18 @@ p_value <- permTest_df %>%
   map_lgl(~.x >= Fval) %>%
   mean()
 
-p_value %>% knitr::kable(caption="\\label{tab:pval} The p - value of the permutation test.",
-                         col.names="P-value")
+p_value %>% knitr::kable(
+    caption="\\label{tab:pval} The $p$-value of the permutation test.",
+    col.names="P-value",
+  ) %>%
+  kable_styling(latex_options=c("hold_position"))
 ```
 
+The resulting F-statistics are shown in figure $\ref{fig:Fhist}$.
 
+The associated $p$-value can be seen in table $\ref{tab:pval}$ and can be seen to be below 0.05.
+We therefore reject the null-hypothesis at significance level of $\alpha = 0.05$, which agrees with the result obtained from the F-test conducted earlier.
 
-
+The permutation test is a more robust test, as it requires no model assumptions.
+It is not dependent on the residuals $\epsilon_{ij}$ being normally distributed for instance.
+This strengthens our belief in the distributions being different, since the conclusion is made with less assumptions.
