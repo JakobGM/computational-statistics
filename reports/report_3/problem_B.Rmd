@@ -14,32 +14,94 @@ library(tibble)
 
 ## Problem B
 
-### B1
+The concentration of bilirubin (mg/dL) in blood samples from three young men was taken by Jørgensen in 1993.
 
-We start off by creating boxplot in order to explore how logarithm of the concentration is distributed across the three different individuals. The boxplot is shown in Figure $\ref{fig:boxplot}$. The plots suggest that there might be a difference between the persons, seeing as the variance is considerably lower for $p2$ than it is for the other individuals. We can also observe that the mean is considerably higher for $p3$ than it is for the other individuals. 
+\begin{table}[htb]
+  \begin{tabular}{c|ccccccccccc}
+    \hline
+    Individual & \multicolumn{11}{c}{Concentration (mg/dL)}                                 \\ \hline
+    \texttt{p1} & 0.14 & 0.20 & 0.23 & 0.27 & 0.27 & 0.34 & 0.41 & 0.41 & 0.55 & 0.61 & 0.66 \\
+    \texttt{p2} & 0.20 & 0.27 & 0.32 & 0.34 & 0.34 & 0.38 & 0.41 & 0.41 & 0.48 & 0.55 &      \\
+    \texttt{p3} & 0.32 & 0.41 & 0.41 & 0.55 & 0.55 & 0.62 & 0.71 & 0.91 &      &      &      \\ \hline
+  \end{tabular}
+  \caption{Blood concentration of bilirubin from three young, male individuals.}
+  \label{tab:bilirubin_data}
+\end{table}
 
-We proceed by fitting a linear model to the data, assosciating a coefficient $\beta_i,\ i = 1,2,3$ with each of the individuals. We want to test whether this model performs better than the null-model. The null-hypothesis, stating that $\beta_1 = \beta_2 = \beta_3$, is rejected at significance $\alpha = 0.05$, seeing as the $p$-value is less than 0.05. 
+The resulting data is shown in table \ref{tab:bilirubin_data}, and provided in the file \texttt{bilirubin.txt}.
 
-The linear model is fitted and the value of the F-statistic is calculated in the code below. 
-
-```{r, fig.cap="\\label{fig:boxplot} Boxplot for each of the different groups"}
+```{r}
 bilirubin <- here::here("reports", "report_3", "data", "bilirubin.txt") %>%
   read.table(header=T) %>%
   as_tibble()
+```
 
+### B1
+
+We start off by creating boxplot in order to explore how logarithm of the concentration is distributed across the three different individuals.
+
+```{r, fig.cap="\\label{fig:boxplot} Boxplot for each of the different groups"}
 bilirubin %>%
   mutate(log_meas = log(meas)) %>%
   ggplot(aes(x=pers, y=log_meas)) +
   geom_boxplot()
-
-linear_model <- lm(log(meas)~pers, data=bilirubin)
-
-summary(linear_model)
-
-Fval <- linear_model %>%
-  glance() %>%
-  pull(statistic)
 ```
+
+The boxplot is shown in Figure $\ref{fig:boxplot}$. The plots suggest that there might be a difference between the persons, seeing as the variance is considerably lower for \texttt{p2} than it is for the other individuals. We can also observe that the mean is considerably higher for \texttt{p3} than it is for the other individuals. 
+
+Assume the following distribution of the bilirubin concentration $Y$ of individual $i$ and sample $j$:
+
+\begin{align*}
+  \log{Y_{ij}} = \beta_i + \epsilon_{ij},
+  & \text{with } i = 1, 2, 3 \text{ and } j = 1, ..., n,
+\end{align*}
+
+where $n_1 = 11$, $n_2 = 10$, and $n_3 = 8$, and $\epsilon_{ij} \overset{iid}{\sim} \mathcal{N}(0, \sigma^2)$.
+We proceed by fitting this linear model to the data, estimating the coefficients $\beta_i,\ i = 1,2,3$ associated with each of the individuals.
+
+```{r}
+linear_model <- lm(log(meas)~pers, data=bilirubin)
+summary(linear_model)
+```
+
+The resulting linear model uses *dummy variable encoding* with estimated regression coefficients
+\begin{align*}
+  \hat{\beta}_0 &\approx -1.094, \\
+  \hat{\beta}_{\texttt{p2}} &\approx 0.064, \\
+  \hat{\beta}_{\texttt{p3}} &\approx 0.465.
+\end{align*}
+
+The model therefore predicts
+$$
+  \mathrm{E}\left[Y_{ij} \mid i = 1\right]
+  <
+  \mathrm{E}\left[Y_{ij} \mid i = 2\right]
+  <
+  \mathrm{E}\left[Y_{ij} \mid i = 3\right].
+$$
+
+So the linear model does in fact distinguish between the individuals to some degree, but is this a good enough reason to conclude that $\beta_i \neq \beta_j$ given $i \neq j$?
+
+In order to investigate this, we want to test whether this model performs significantly better than the null-model, i.e$.$ the model that only uses the mean of the data.
+The $F$-test statistic can be used in order to test the hypothesis:
+\begin{align*}
+  \mathrm{H_0} &: \beta_1 = \beta_2 = \beta_3 \\
+  \mathrm{H_1} &: \beta_i \neq \beta_j, \text{ for some } i \neq j
+\end{align*}
+
+This test is now performed, and the resulting F-test statistic is saved to `Fval`:
+
+```{r}
+Fstat <- linear_model %>%
+  glance() %>%
+  select(statistic, p.value)
+
+Fval <- Fstat$statistic
+Fstat %>% kable(format = "pandoc", caption = "\\label{tab:Fstat}Result of F-test.")
+```
+
+The null-hypothesis must be rejected at a significance level of $\alpha = 0.05$, seeing as the $p$-value is less than 0.05.
+
 
 ### B2
 

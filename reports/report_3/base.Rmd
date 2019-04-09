@@ -12,6 +12,7 @@ output:
   html_document:
     fig_caption: yes
 header-includes:
+  - \usepackage{float}
   - \usepackage{fontspec}
   - \setmonofont{DejaVu Sans Code}
   - \makeatletter
